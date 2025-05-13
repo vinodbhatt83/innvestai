@@ -1,7 +1,7 @@
 // pages/deals/create.js
 import React from 'react';
 import Layout from '../../components/Layout';
-import DealForm from '../../components/deals/DealForm';
+import DealCreationForm from '../../components/deals/DealCreationForm';
 
 const CreateDealPage = () => {
   return (
@@ -15,7 +15,7 @@ const CreateDealPage = () => {
           </div>
         </div>
         
-        <DealForm />
+        <DealCreationForm />
       </div>
     </Layout>
   );

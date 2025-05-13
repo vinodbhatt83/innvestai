@@ -1,87 +1,130 @@
 // pages/index.js
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '../components/Layout';
-import { analyticsApi } from '../lib/api';
+import AIInsightsComponent from '../components/dashboard/AIInsightsComponent';
+import MarketPerformanceComponent from '../components/dashboard/MarketPerformanceComponent';
+import PortfolioBreakdownComponent from '../components/dashboard/PortfolioBreakdownComponent';
+import { useAuth } from '../contexts/AuthContext';
+
+// Force server-side rendering
+export async function getServerSideProps() {
+  return {
+    props: {}
+  };
+}
 
 const DashboardPage = () => {
+  const { user, isAuthenticated, loading } = useAuth();
+  const router = useRouter();
   const [recentDeals, setRecentDeals] = useState([]);
-  const [marketOverview, setMarketOverview] = useState(null);
+  const [portfolioStats, setPortfolioStats] = useState({
+    totalInvestment: 0,
+    activeDeals: 0,
+    avgReturn: 0,
+    properties: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Authentication check
   useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  // Add console logs to debug the component rendering
+  useEffect(() => {
+    console.log("Dashboard component state:", { 
+      isAuthenticated, 
+      loading, 
+      isLoading, 
+      recentDealsCount: recentDeals.length 
+    });
+  });
+
+  // Data fetching
+  useEffect(() => {
+    // Skip if not authenticated or still loading
+    if (!isAuthenticated || loading) {
+      return;
+    }
+    
+    console.log("Starting data fetch...");
+    
     const fetchDashboardData = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
-        // In a real application, these would be API calls to fetch data
-        // For this POC, we'll simulate the data
+        console.log("Fetching deals data...");
+        // Fetch recent deals
+        const dealsResponse = await fetch('/api/deals?limit=4&offset=0&sortBy=created_at&order=DESC');
+        console.log("Deals response:", dealsResponse.ok);
         
-        // Simulated recent deals
-        setRecentDeals([
-          {
-            id: 1,
-            name: 'Downtown Marriott Acquisition',
-            property: 'Marriott Downtown',
-            investment: 25000000,
-            return: 8.5,
-            status: 'Active',
-          },
-          {
-            id: 2,
-            name: 'Hilton Resort Renovation',
-            property: 'Hilton Resort & Spa',
-            investment: 12000000,
-            return: 9.2,
-            status: 'Pending',
-          },
-          {
-            id: 3,
-            name: 'Hampton Inn Portfolio',
-            property: 'Hampton Inn & Suites',
-            investment: 18500000,
-            return: 7.8,
-            status: 'Active',
-          },
-          {
-            id: 4,
-            name: '1 Hotel Brooklyn Bridge Refinancing',
-            property: '1 Hotel Brooklyn Bridge',
-            investment: 30000000,
-            return: 6.5,
-            status: 'Draft',
-          },
-        ]);
+        if (!dealsResponse.ok) {
+          throw new Error('Failed to fetch deals data');
+        }
         
-        // Simulated market overview
-        setMarketOverview({
-          topMarkets: [
-            { name: 'Miami', revpar: 195.75, growth: 12.5 },
-            { name: 'New York', revpar: 210.50, growth: 8.2 },
-            { name: 'San Francisco', revpar: 182.30, growth: 5.8 },
-            { name: 'Las Vegas', revpar: 165.20, growth: 15.3 },
-            { name: 'Orlando', revpar: 145.80, growth: 10.1 },
-          ],
-          industryMetrics: {
-            averageRevPar: 125.50,
-            averageOccupancy: 72.8,
-            averageADR: 172.40,
-            revParGrowth: 9.2,
-          }
-        });
+        const dealsData = await dealsResponse.json();
+        console.log("Deals data received:", dealsData);
+
+        // Format deals to match the expected structure for the dashboard
+        const formattedDeals = dealsData.deals.map(deal => ({
+          id: deal.id || deal.deal_id || 0,
+          name: deal.deal_name || deal.name || 'Unnamed Deal',
+          property: deal.property_name || 'Unknown Property',
+          investment: parseFloat(deal.investment_amount) || 0,
+          return: parseFloat(deal.expected_return) || 0,
+          status: deal.status || 'Unknown'
+        }));
+
+        setRecentDeals(formattedDeals);
+        console.log("Deals state updated with", formattedDeals.length, "deals");
+
+        // Fetch portfolio statistics
+        console.log("Fetching stats data...");
+        const statsResponse = await fetch('/api/analytics/portfolio-stats');
+        console.log("Stats response:", statsResponse.ok);
+        
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          console.log("Stats data received:", statsData);
+          
+          setPortfolioStats({
+            totalInvestment: parseFloat(statsData.totalInvestment) || 0,
+            activeDeals: parseInt(statsData.activeDeals) || 0,
+            avgReturn: parseFloat(statsData.avgReturn) || 0,
+            properties: parseInt(statsData.properties) || 0
+          });
+          console.log("Portfolio stats updated");
+        } else {
+          // If the API isn't implemented yet, calculate some basic stats from the deals
+          console.log("Calculating stats from deals...");
+          setPortfolioStats({
+            totalInvestment: formattedDeals.reduce((sum, deal) => sum + deal.investment, 0),
+            activeDeals: formattedDeals.filter(deal => deal.status === 'Active').length,
+            avgReturn: formattedDeals.length > 0 
+              ? formattedDeals.reduce((sum, deal) => sum + deal.return, 0) / formattedDeals.length 
+              : 0,
+            properties: formattedDeals.length
+          });
+          console.log("Calculated portfolio stats updated");
+        }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setIsLoading(false);
+        console.log("Data fetch complete, loading set to false");
       }
     };
     
     fetchDashboardData();
-  }, []);
-  
+  }, [isAuthenticated, loading]);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -108,13 +151,32 @@ const DashboardPage = () => {
     }
   };
 
+  // Show loading state while checking authentication
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
+          <div className="flex justify-center">
+            <svg className="animate-spin h-10 w-10 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+          <p className="text-center text-neutral-500 mt-4">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log("Rendering dashboard content:", { isLoading, dealsCount: recentDeals.length });
+
   return (
     <Layout title="Dashboard">
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between mb-8">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">
-              Hotel Investment Dashboard
+              Investment Dashboard
             </h2>
             <p className="mt-1 text-sm text-neutral-500">
               AI-powered analytics for hotel investment decisions
@@ -149,7 +211,7 @@ const DashboardPage = () => {
                         {isLoading ? (
                           <div className="animate-pulse h-6 w-24 bg-neutral-200 rounded"></div>
                         ) : (
-                          formatCurrency(85500000)
+                          formatCurrency(portfolioStats.totalInvestment)
                         )}
                       </div>
                     </dd>
@@ -177,7 +239,7 @@ const DashboardPage = () => {
                         {isLoading ? (
                           <div className="animate-pulse h-6 w-24 bg-neutral-200 rounded"></div>
                         ) : (
-                          "12"
+                          portfolioStats.activeDeals
                         )}
                       </div>
                     </dd>
@@ -205,7 +267,7 @@ const DashboardPage = () => {
                         {isLoading ? (
                           <div className="animate-pulse h-6 w-24 bg-neutral-200 rounded"></div>
                         ) : (
-                          "8.2%"
+                          `${portfolioStats.avgReturn.toFixed(1)}%`
                         )}
                       </div>
                     </dd>
@@ -233,7 +295,7 @@ const DashboardPage = () => {
                         {isLoading ? (
                           <div className="animate-pulse h-6 w-24 bg-neutral-200 rounded"></div>
                         ) : (
-                          "24"
+                          portfolioStats.properties
                         )}
                       </div>
                     </dd>
@@ -246,9 +308,10 @@ const DashboardPage = () => {
 
         {/* Main Content */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* Recent Deals */}
+          {/* Left Column: Recent Deals, Market Performance, and Portfolio Breakdown */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow rounded-lg">
+            {/* Recent Deals */}
+            <div className="bg-white shadow rounded-lg mb-8">
               <div className="px-6 py-5 border-b border-neutral-200 flex justify-between items-center">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">
                   Recent Deals
@@ -281,7 +344,7 @@ const DashboardPage = () => {
                   </div>
                 ) : (
                   <div className="divide-y divide-neutral-200">
-                    {recentDeals.map((deal) => (
+                    {recentDeals.length > 0 ? recentDeals.map((deal) => (
                       <div key={deal.id} className="py-4 flex items-center">
                         <div className="min-w-0 flex-1">
                           <Link href={`/deals/${deal.id}`}>
@@ -298,146 +361,45 @@ const DashboardPage = () => {
                             {deal.status}
                           </span>
                           <span className="ml-4 text-sm font-medium text-neutral-900">
-                            {deal.return}% Return
+                            {deal.return.toFixed(1)}% Return
                           </span>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="py-4 text-center">
+                        <p className="text-sm text-neutral-500">No deals found. Create your first deal to get started.</p>
+                        <Link href="/deals/create">
+                          <span className="mt-2 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary cursor-pointer">
+                            Create New Deal
+                          </span>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Market Performance */}
-            <div className="mt-8 bg-white shadow rounded-lg">
-              <div className="px-6 py-5 border-b border-neutral-200 flex justify-between items-center">
-                <h3 className="text-lg font-medium leading-6 text-neutral-900">
-                  Market Performance
-                </h3>
-                <Link href="/analytics/market-trends">
-                  <span className="text-sm font-medium text-secondary hover:text-secondary-light cursor-pointer">
-                    View Details
-                  </span>
-                </Link>
-              </div>
-              <div className="px-6 py-5">
-                {isLoading ? (
-                  <div className="animate-pulse space-y-4">
-                    <div className="h-60 bg-neutral-200 rounded"></div>
-                  </div>
-                ) : error ? (
-                  <p className="text-sm text-neutral-500">Unable to load market performance data.</p>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-sm font-medium text-neutral-500 mb-2">Top Performing Markets</h4>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {marketOverview.topMarkets.map((market, index) => (
-                          <div key={index} className="bg-neutral-50 rounded-lg p-4">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm font-medium text-neutral-900">{market.name}</span>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                +{market.growth}%
-                              </span>
-                            </div>
-                            <p className="text-lg font-semibold text-secondary">${market.revpar.toFixed(2)}</p>
-                            <p className="text-xs text-neutral-500">RevPAR</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium text-neutral-500 mb-2">Industry Averages</h4>
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        <div className="bg-neutral-50 rounded-lg p-3 text-center">
-                          <p className="text-sm text-neutral-500">RevPAR</p>
-                          <p className="text-lg font-semibold text-neutral-900">${marketOverview.industryMetrics.averageRevPar}</p>
-                        </div>
-                        <div className="bg-neutral-50 rounded-lg p-3 text-center">
-                          <p className="text-sm text-neutral-500">ADR</p>
-                          <p className="text-lg font-semibold text-neutral-900">${marketOverview.industryMetrics.averageADR}</p>
-                        </div>
-                        <div className="bg-neutral-50 rounded-lg p-3 text-center">
-                          <p className="text-sm text-neutral-500">Occupancy</p>
-                          <p className="text-lg font-semibold text-neutral-900">{marketOverview.industryMetrics.averageOccupancy}%</p>
-                        </div>
-                        <div className="bg-neutral-50 rounded-lg p-3 text-center">
-                          <p className="text-sm text-neutral-500">RevPAR Growth</p>
-                          <p className="text-lg font-semibold text-neutral-900">+{marketOverview.industryMetrics.revParGrowth}%</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="mb-8">
+              <MarketPerformanceComponent />
+            </div>
+
+            {/* Portfolio Breakdown */}
+            <div className="mb-8">
+              <PortfolioBreakdownComponent />
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Right Column: AI Insights and Quick Actions */}
           <div>
             {/* AI Insights */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-5 border-b border-neutral-200">
-                <h3 className="text-lg font-medium leading-6 text-neutral-900">
-                  AI Investment Insights
-                </h3>
-              </div>
-              <div className="px-6 py-5">
-                <div className="space-y-4">
-                  <div className="bg-neutral-50 rounded-md p-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-secondary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h4 className="text-sm font-medium text-neutral-900">Miami market opportunity</h4>
-                        <p className="mt-1 text-sm text-neutral-600">
-                          Miami shows 12.5% RevPAR growth, significantly outperforming the industry average of 9.2%.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-neutral-50 rounded-md p-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h4 className="text-sm font-medium text-neutral-900">Hilton Resort renovation ROI</h4>
-                        <p className="mt-1 text-sm text-neutral-600">
-                          The Hilton Resort renovation project is projected to yield a 9.2% return, above your portfolio average of 8.2%.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-neutral-50 rounded-md p-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h4 className="text-sm font-medium text-neutral-900">Market risk alert</h4>
-                        <p className="mt-1 text-sm text-neutral-600">
-                          San Franciscos supply growth (4.2%) is outpacing demand growth (3.1%), which may impact returns in the near term.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="mb-8">
+              <AIInsightsComponent />
             </div>
 
             {/* Quick Actions */}
-            <div className="mt-8 bg-white shadow rounded-lg">
+            <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-5 border-b border-neutral-200">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">Quick Actions</h3>
               </div>
@@ -458,58 +420,6 @@ const DashboardPage = () => {
                       View Performance Reports
                     </span>
                   </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Portfolio Breakdown */}
-            <div className="mt-8 bg-white shadow rounded-lg">
-              <div className="px-6 py-5 border-b border-neutral-200">
-                <h3 className="text-lg font-medium leading-6 text-neutral-900">Portfolio Breakdown</h3>
-              </div>
-              <div className="px-6 py-5">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium text-neutral-700">By Market</span>
-                    </div>
-                    <div className="bg-neutral-50 p-3 rounded-md">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-neutral-500">New York</span>
-                        <span className="text-xs font-medium text-neutral-500">28%</span>
-                      </div>
-                      <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                        <div className="h-1.5 bg-secondary rounded-full" style={{ width: '28%' }}></div>
-                      </div>
-                    </div>
-                    <div className="mt-2 bg-neutral-50 p-3 rounded-md">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-neutral-500">Miami</span>
-                        <span className="text-xs font-medium text-neutral-500">22%</span>
-                      </div>
-                      <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                        <div className="h-1.5 bg-secondary rounded-full" style={{ width: '22%' }}></div>
-                      </div>
-                    </div>
-                    <div className="mt-2 bg-neutral-50 p-3 rounded-md">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-neutral-500">Chicago</span>
-                        <span className="text-xs font-medium text-neutral-500">18%</span>
-                      </div>
-                      <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                        <div className="h-1.5 bg-secondary rounded-full" style={{ width: '18%' }}></div>
-                      </div>
-                    </div>
-                    <div className="mt-2 bg-neutral-50 p-3 rounded-md">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-neutral-500">Other</span>
-                        <span className="text-xs font-medium text-neutral-500">32%</span>
-                      </div>
-                      <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                        <div className="h-1.5 bg-secondary rounded-full" style={{ width: '32%' }}></div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

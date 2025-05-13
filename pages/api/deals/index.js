@@ -57,36 +57,35 @@ export default async function handler(req, res) {
         // If we have deals and property_id exists, try to get property details
         const deals = [...dealsResult.rows];
 
+        // This is just the part of the code that needs to be fixed in pages/api/deals/index.js
+
+        // When enhancing each deal with property info in the GET handler:
         if (deals.length > 0 && hasPropertyId) {
           // Try to enhance deals with property info
           try {
             // First, check if dim_property table exists and get its structure
             const propertyInfoQuery = `
-              SELECT column_name 
-              FROM information_schema.columns 
-              WHERE table_schema = 'public' 
-              AND table_name = 'dim_property';
-            `;
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = 'dim_property';
+    `;
 
             const propertyInfo = await query(propertyInfoQuery);
 
             if (propertyInfo.rows.length > 0) {
-              // Get property ID column name
-              const propertyIdColumn = propertyInfo.rows.find(col =>
-                col.column_name === 'property_id' || col.column_name === 'id'
-              )?.column_name || 'property_id';
-
               // Enhance each deal with property info
               for (let i = 0; i < deals.length; i++) {
                 const deal = deals[i];
                 if (deal.property_id) {
+                  // Use property_key instead of property_id
                   const propertyQuery = `
-                    SELECT p.*, h.hotel_type_name, m.market_name
-                    FROM dim_property p
-                    LEFT JOIN dim_hotel_type h ON p.hotel_type_id = h.hotel_type_id
-                    LEFT JOIN dim_market m ON p.market_id = m.market_id
-                    WHERE p.${propertyIdColumn} = $1
-                  `;
+            SELECT p.*, h.hotel_type_name, m.market_name
+            FROM dim_property p
+            LEFT JOIN dim_hotel_type h ON p.hotel_type_key = h.hotel_type_key
+            LEFT JOIN dim_market m ON p.market_key = m.market_key
+            WHERE p.property_key = $1
+          `;
 
                   try {
                     const propertyResult = await query(propertyQuery, [deal.property_id]);

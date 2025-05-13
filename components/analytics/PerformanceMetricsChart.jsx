@@ -11,43 +11,31 @@ const PerformanceMetricsChart = ({ data }) => {
         );
     }
 
-    // Transform data for the chart
-    const chartData = data.map(item => {
-        const month = new Date(0, item.month - 1).toLocaleString('default', { month: 'short' });
-        return {
-            month,
-            revenue: parseFloat(item.revenue || 0),
-            revpar: parseFloat(item.revpar || 0),
-            adr: parseFloat(item.adr || 0),
-            occupancy: parseFloat(item.occupancy || 0) * 100 // Convert to percentage
-        };
-    });
+    // Process the data for the chart
+    const chartData = data.map(item => ({
+        market: item.market_name,
+        revpar: parseFloat(item.avg_revpar || item.revpar || 0).toFixed(2),
+        adr: parseFloat(item.avg_adr || item.adr || 0).toFixed(2),
+        occupancy: parseFloat(item.avg_occupancy || item.occupancy || 0) * 100 // Convert to percentage
+    }));
 
     // Custom tooltip formatter
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-white p-3 shadow-md rounded-md border border-neutral-200">
-                    <p className="text-sm font-medium text-neutral-900">{`Month: ${label}`}</p>
+                    <p className="text-sm font-medium text-neutral-900">{`Market: ${label}`}</p>
                     {payload.map((entry, index) => {
-                        let value = entry.value;
-                        let prefix = '';
-                        let suffix = '';
-
-                        if (entry.name === 'revenue') {
-                            prefix = '$';
-                            value = value.toLocaleString();
-                        } else if (entry.name === 'revpar' || entry.name === 'adr') {
-                            prefix = '$';
-                            value = value.toFixed(2);
-                        } else if (entry.name === 'occupancy') {
-                            suffix = '%';
-                            value = value.toFixed(1);
-                        }
-
+                        const metricName = entry.name === 'revpar' ? 'RevPAR' : 
+                                         entry.name === 'adr' ? 'ADR' : 'Occupancy';
+                        
+                        const value = entry.name === 'occupancy' ? 
+                                    `${parseFloat(entry.value).toFixed(1)}%` :
+                                    `$${parseFloat(entry.value).toFixed(2)}`;
+                        
                         return (
                             <p key={`item-${index}`} className="text-sm" style={{ color: entry.color }}>
-                                {`${entry.name === 'revpar' ? 'RevPAR' : entry.name === 'adr' ? 'ADR' : entry.name === 'occupancy' ? 'Occupancy' : 'Revenue'}: ${prefix}${value}${suffix}`}
+                                {`${metricName}: ${value}`}
                             </p>
                         );
                     })}
@@ -65,42 +53,60 @@ const PerformanceMetricsChart = ({ data }) => {
                     top: 20,
                     right: 30,
                     left: 20,
-                    bottom: 5,
+                    bottom: 10,
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                    dataKey="month"
+                <XAxis 
+                    dataKey="market" 
                     tickLine={false}
                     axisLine={{ stroke: '#d1d5db' }}
                 />
-                <YAxis
-                    yAxisId="revenue"
+                <YAxis 
+                    yAxisId="left"
                     orientation="left"
                     tickLine={false}
                     axisLine={{ stroke: '#d1d5db' }}
-                    tickFormatter={(value) => `$${value / 1000}k`}
-                    label={{ value: 'Revenue', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+                    tickFormatter={(value) => `$${value}`}
+                    label={{ value: 'Rates ($)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
                 />
-                <YAxis
-                    yAxisId="metrics"
+                <YAxis 
+                    yAxisId="right"
                     orientation="right"
                     tickLine={false}
                     axisLine={{ stroke: '#d1d5db' }}
-                    label={{ value: 'Metrics', angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
+                    tickFormatter={(value) => `${value}%`}
+                    domain={[0, 100]}
+                    label={{ value: 'Occupancy (%)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend
-                    verticalAlign="top"
-                    height={36}
+                <Legend 
                     formatter={(value) => {
-                        return value === 'revenue' ? 'Revenue' : value === 'revpar' ? 'RevPAR' : value === 'adr' ? 'ADR' : 'Occupancy';
+                        return value === 'revpar' ? 'RevPAR' : 
+                               value === 'adr' ? 'ADR' : 'Occupancy';
                     }}
                 />
-                <Bar yAxisId="revenue" dataKey="revenue" fill="#10b981" name="revenue" />
-                <Bar yAxisId="metrics" dataKey="revpar" fill="#1e3a8a" name="revpar" />
-                <Bar yAxisId="metrics" dataKey="adr" fill="#f59e0b" name="adr" />
-                <Bar yAxisId="metrics" dataKey="occupancy" fill="#ef4444" name="occupancy" />
+                <Bar 
+                    yAxisId="left" 
+                    dataKey="revpar" 
+                    name="revpar" 
+                    fill="#10b981" 
+                    radius={[4, 4, 0, 0]} 
+                />
+                <Bar 
+                    yAxisId="left" 
+                    dataKey="adr" 
+                    name="adr" 
+                    fill="#1e3a8a" 
+                    radius={[4, 4, 0, 0]} 
+                />
+                <Bar 
+                    yAxisId="right" 
+                    dataKey="occupancy" 
+                    name="occupancy" 
+                    fill="#f59e0b" 
+                    radius={[4, 4, 0, 0]} 
+                />
             </BarChart>
         </ResponsiveContainer>
     );

@@ -1,0 +1,16 @@
+{
+  "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
+  "/_document": "pages/_document.js",
+  "/": "pages/index.js",
+  "/login": "pages/login.js",
+  "/api/auth/login": "pages/api/auth/login.js",
+  "/api/analytics/market-dashboard": "pages/api/analytics/market-dashboard.js",
+  "/api/deals": "pages/api/deals.js",
+  "/api/analytics/portfolio-breakdown": "pages/api/analytics/portfolio-breakdown.js",
+  "/api/analytics/insights": "pages/api/analytics/insights.js",
+  "/api/analytics/portfolio-stats": "pages/api/analytics/portfolio-stats.js",
+  "/deals/create": "pages/deals/create.js",
+  "/admin/accounts": "pages/admin/accounts.js",
+  "/api/roles": "pages/api/roles.js"
+}

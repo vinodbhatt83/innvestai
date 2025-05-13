@@ -6,7 +6,7 @@ import MarketTrendsChart from '../../components/analytics/MarketTrendsChart';
 
 const MarketTrendsPage = () => {
   const [markets, setMarkets] = useState([
-    'New York', 'Miami', 'Chicago', 'Los Angeles', 'Boston', 
+    'New York', 'Miami', 'Chicago', 'Los Angeles', 'Boston',
     'San Francisco', 'Washington DC', 'Las Vegas', 'Orlando', 'Austin'
   ]);
   const [selectedMarket, setSelectedMarket] = useState('Miami');
@@ -18,11 +18,11 @@ const MarketTrendsPage = () => {
   const fetchMarketTrends = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await analyticsApi.getMarketTrends(
-        selectedMarket, 
-        yearRange.startYear, 
+        selectedMarket,
+        yearRange.startYear,
         yearRange.endYear
       );
       setMarketData(data);
@@ -219,19 +219,19 @@ const MarketTrendsPage = () => {
                                     {item.year}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                                    ${item.revpar.toFixed(2)}
+                                    ${item.revpar}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                                    ${item.adr.toFixed(2)}
+                                    ${item.adr}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                                    {(item.occupancy * 100).toFixed(1)}%
+                                    {item.occupancy && (item.occupancy * 100).toFixed(1)}%
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                                    {(item.supply_growth * 100).toFixed(1)}%
+                                    {item.supply_growth && (item.supply_growth * 100).toFixed(1)}%
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                                    {(item.demand_growth * 100).toFixed(1)}%
+                                    {item.demand_growth && (item.demand_growth * 100).toFixed(1)}%
                                   </td>
                                 </tr>
                               ))}
@@ -273,13 +273,15 @@ const MarketTrendsPage = () => {
                         <div className="col-span-1 bg-neutral-50 rounded-lg p-4 flex flex-col items-center justify-center">
                           <dt className="text-xs font-medium text-neutral-500 mb-1">RevPAR</dt>
                           <dd className="text-lg font-semibold text-secondary">
-                            ${marketData && marketData.length > 0 ? marketData[marketData.length - 1].revpar.toFixed(2) : '0.00'}
+                            ${marketData && marketData.length > 0 && marketData[marketData.length - 1].revpar ? 
+                              marketData[marketData.length - 1].revpar.toFixed(2) : '0.00'}
                           </dd>
                         </div>
                         <div className="col-span-1 bg-neutral-50 rounded-lg p-4 flex flex-col items-center justify-center">
                           <dt className="text-xs font-medium text-neutral-500 mb-1">Occupancy</dt>
                           <dd className="text-lg font-semibold text-secondary">
-                            {marketData && marketData.length > 0 ? (marketData[marketData.length - 1].occupancy * 100).toFixed(1) : '0.0'}%
+                            {marketData && marketData.length > 0 && marketData[marketData.length - 1].occupancy ? 
+                              (marketData[marketData.length - 1].occupancy * 100).toFixed(1) : '0.0'}%
                           </dd>
                         </div>
                       </dl>
@@ -288,12 +290,12 @@ const MarketTrendsPage = () => {
                     <div className="mb-4">
                       <h4 className="text-sm font-medium text-neutral-500">Market Analysis</h4>
                       <p className="mt-2 text-sm text-neutral-600">
-                        {selectedMarket} has shown a {marketData && marketData.length > 1 && 
+                        {selectedMarket} has shown a {marketData && marketData.length > 1 &&
                           (marketData[marketData.length - 1].revpar > marketData[marketData.length - 2].revpar ? 'positive' : 'negative')
                         } trend in RevPAR over the analyzed period, with {
-                          marketData && marketData.length > 0 && 
-                          (marketData[marketData.length - 1].demand_growth > marketData[marketData.length - 1].supply_growth 
-                            ? 'demand growth outpacing supply growth' 
+                          marketData && marketData.length > 0 &&
+                          (marketData[marketData.length - 1].demand_growth > marketData[marketData.length - 1].supply_growth
+                            ? 'demand growth outpacing supply growth'
                             : 'supply growth outpacing demand growth')
                         }.
                       </p>
@@ -305,28 +307,26 @@ const MarketTrendsPage = () => {
                         <div className="bg-neutral-50 p-3 rounded-md">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-xs font-medium text-neutral-500">RevPAR Growth</span>
-                            {marketData && marketData.length > 1 && (
-                              <span className={`text-xs font-medium ${
-                                marketData[marketData.length - 1].revpar > marketData[0].revpar 
+                            {marketData && marketData.length > 1 && marketData[marketData.length - 1].revpar && marketData[0].revpar && (
+                              <span className={`text-xs font-medium ${marketData[marketData.length - 1].revpar > marketData[0].revpar
                                   ? 'text-green-600' : 'text-red-600'
-                              }`}>
+                                }`}>
                                 {marketData[marketData.length - 1].revpar > marketData[0].revpar ? '+' : ''}
                                 {((marketData[marketData.length - 1].revpar / marketData[0].revpar - 1) * 100).toFixed(1)}%
                               </span>
                             )}
                           </div>
                           <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                            {marketData && marketData.length > 1 && (
-                              <div 
-                                className={`h-1.5 rounded-full ${
-                                  marketData[marketData.length - 1].revpar > marketData[0].revpar 
+                            {marketData && marketData.length > 1 && marketData[marketData.length - 1].revpar && marketData[0].revpar && (
+                              <div
+                                className={`h-1.5 rounded-full ${marketData[marketData.length - 1].revpar > marketData[0].revpar
                                     ? 'bg-green-500' : 'bg-red-500'
-                                }`} 
-                                style={{ 
+                                  }`}
+                                style={{
                                   width: `${Math.min(
-                                    100, 
+                                    100,
                                     Math.abs((marketData[marketData.length - 1].revpar / marketData[0].revpar - 1) * 100)
-                                  )}%` 
+                                  )}%`
                                 }}
                               ></div>
                             )}
@@ -336,28 +336,26 @@ const MarketTrendsPage = () => {
                         <div className="bg-neutral-50 p-3 rounded-md">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-xs font-medium text-neutral-500">ADR Growth</span>
-                            {marketData && marketData.length > 1 && (
-                              <span className={`text-xs font-medium ${
-                                marketData[marketData.length - 1].adr > marketData[0].adr 
+                            {marketData && marketData.length > 1 && marketData[marketData.length - 1].adr && marketData[0].adr && (
+                              <span className={`text-xs font-medium ${marketData[marketData.length - 1].adr > marketData[0].adr
                                   ? 'text-green-600' : 'text-red-600'
-                              }`}>
+                                }`}>
                                 {marketData[marketData.length - 1].adr > marketData[0].adr ? '+' : ''}
                                 {((marketData[marketData.length - 1].adr / marketData[0].adr - 1) * 100).toFixed(1)}%
                               </span>
                             )}
                           </div>
                           <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                            {marketData && marketData.length > 1 && (
-                              <div 
-                                className={`h-1.5 rounded-full ${
-                                  marketData[marketData.length - 1].adr > marketData[0].adr 
+                            {marketData && marketData.length > 1 && marketData[marketData.length - 1].adr && marketData[0].adr && (
+                              <div
+                                className={`h-1.5 rounded-full ${marketData[marketData.length - 1].adr > marketData[0].adr
                                     ? 'bg-green-500' : 'bg-red-500'
-                                }`} 
-                                style={{ 
+                                  }`}
+                                style={{
                                   width: `${Math.min(
-                                    100, 
+                                    100,
                                     Math.abs((marketData[marketData.length - 1].adr / marketData[0].adr - 1) * 100)
-                                  )}%` 
+                                  )}%`
                                 }}
                               ></div>
                             )}
@@ -367,28 +365,26 @@ const MarketTrendsPage = () => {
                         <div className="bg-neutral-50 p-3 rounded-md">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-xs font-medium text-neutral-500">Occupancy Growth</span>
-                            {marketData && marketData.length > 1 && (
-                              <span className={`text-xs font-medium ${
-                                marketData[marketData.length - 1].occupancy > marketData[0].occupancy 
+                            {marketData && marketData.length > 1 && marketData[marketData.length - 1].occupancy && marketData[0].occupancy && (
+                              <span className={`text-xs font-medium ${marketData[marketData.length - 1].occupancy > marketData[0].occupancy
                                   ? 'text-green-600' : 'text-red-600'
-                              }`}>
+                                }`}>
                                 {marketData[marketData.length - 1].occupancy > marketData[0].occupancy ? '+' : ''}
                                 {((marketData[marketData.length - 1].occupancy / marketData[0].occupancy - 1) * 100).toFixed(1)}%
                               </span>
                             )}
                           </div>
                           <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                            {marketData && marketData.length > 1 && (
-                              <div 
-                                className={`h-1.5 rounded-full ${
-                                  marketData[marketData.length - 1].occupancy > marketData[0].occupancy 
+                            {marketData && marketData.length > 1 && marketData[marketData.length - 1].occupancy && marketData[0].occupancy && (
+                              <div
+                                className={`h-1.5 rounded-full ${marketData[marketData.length - 1].occupancy > marketData[0].occupancy
                                     ? 'bg-green-500' : 'bg-red-500'
-                                }`} 
-                                style={{ 
+                                  }`}
+                                style={{
                                   width: `${Math.min(
-                                    100, 
+                                    100,
                                     Math.abs((marketData[marketData.length - 1].occupancy / marketData[0].occupancy - 1) * 100)
-                                  )}%` 
+                                  )}%`
                                 }}
                               ></div>
                             )}

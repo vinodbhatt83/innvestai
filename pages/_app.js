@@ -1,5 +1,15 @@
-import "@/styles/globals.css";
+// pages/_app.js
+import React from 'react';
+import { AuthProvider } from '../contexts/AuthContext';
+import "../styles/globals.css";
 
-export default function App({ Component, pageProps }) {
-  return <Component {...pageProps} />;
+function MyApp({ Component, pageProps }) {
+  return (
+    <AuthProvider>
+      <Component {...pageProps} />
+    </AuthProvider>
+  );
 }
+
+// Prevent unnecessary re-renders during development
+export default MyApp;
