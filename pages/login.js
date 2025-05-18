@@ -45,8 +45,7 @@ const Login = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-                <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
+            <div className="min-h-screen flex items-center justify-center bg-neutral-50">                <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
                     <div className="flex justify-center">
                         <svg className="animate-spin h-10 w-10 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -65,13 +64,12 @@ const Login = () => {
             </Head>
 
             <div className="min-h-screen flex items-center justify-center bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
-                <div className="w-full max-w-md space-y-8">
-                    {/* Logo and Heading */}
+                <div className="w-full max-w-md space-y-8">                    {/* Logo and Heading */}
                     <div>
                         <div className="flex justify-center">
-                            <h1 className="text-3xl font-bold text-center text-gray-900">InnVestAI</h1>
+                            <img src="/logo.svg" alt="InnVestAI Logo" className="h-16" />
                         </div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-neutral-900">
+                        <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
                             Sign in to your account
                         </h2>
                         <p className="mt-2 text-center text-sm text-neutral-600">

@@ -22,21 +22,18 @@ const Layout = ({ children, title = 'InnVestAI' }) => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <Head>
+    <div className="min-h-screen bg-neutral-50">      <Head>
         <title>{title} | Hotel Investment Analytics</title>
         <meta name="description" content="AI-powered hotel investment analytics" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      {/* Navigation */}
+        <link rel="icon" href="/theme-favicon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" />
+      </Head>      {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/">
-                <span className="flex-shrink-0 flex items-center cursor-pointer">
-                  <div className="text-primary text-3xl font-bold">InnVest<span className="text-secondary">AI</span></div>
+          <div className="flex justify-between h-20">
+            <div className="flex items-center">              <Link href="/">
+                <span className="flex-shrink-0 flex items-center cursor-pointer py-2">
+                  <img src="/logo.svg" alt="InnVestAI Logo" className="h-14 w-auto" />
                 </span>
               </Link>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

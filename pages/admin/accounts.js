@@ -5,6 +5,7 @@ import Head from 'next/head';
 import { useAuth } from '../../contexts/AuthContext';
 import { withAuthRedirect } from '../../middleware/auth';
 import withAuthProtection from '../../utils/withAuthProtection';
+import Layout from '../../components/Layout';
 
 const ManageAccounts = () => {
     const { user, hasPermission } = useAuth();
@@ -20,30 +21,77 @@ const ManageAccounts = () => {
         if (user && !user.isAdmin) {
             router.push('/dashboard');
         }
-    }, [user, router]);
-
-    // Fetch users for the account
+    }, [user, router]);    // Fetch users for the account
     useEffect(() => {
-        if (user) {
+        if (user && user.accountId) {
+            // Only fetch when user and accountId are available
             fetchUsers();
             fetchRoles();
         }
     }, [user]);
-
-    const fetchUsers = async () => {
+      const fetchUsers = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/accounts/${user.accountId}/users`);
+            setError(null);
+            
+            if (!user || !user.accountId) {
+                console.error('Cannot fetch users: user or accountId is missing', { user });
+                setError('User data is incomplete - please refresh the page');
+                setLoading(false);
+                return;
+            }
+            
+            console.log('Fetching users for account', { 
+                accountId: user.accountId,
+                userDetails: {
+                    id: user.id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    isAdmin: user.isAdmin
+                }
+            });
+            
+            // First try the debug endpoint which bypasses authentication
+            let response;
+            try {
+                response = await fetch(`/api/debug/users?accountId=${user.accountId}`);
+                console.log('Using debug API endpoint, response:', response.status);
+            } catch (debugError) {
+                console.error('Debug API failed, falling back to regular endpoint:', debugError);
+                response = await fetch(`/api/account/users?accountId=${user.accountId}`);
+            }
+            
+            // Log response status and headers for debugging
+            console.log('User fetch response', { 
+                status: response.status, 
+                ok: response.ok,
+                statusText: response.statusText
+            });
 
+            // Parse the response
+            const data = await response.json();
+            
             if (!response.ok) {
-                throw new Error('Failed to fetch users');
+                console.error('API error response:', { 
+                    status: response.status,
+                    data
+                });
+                throw new Error(`Failed to fetch users: ${response.status} ${data.error || 'Unknown error'}`);
             }
 
-            const data = await response.json();
-            setUsers(data.users);
+            console.log('Users fetched successfully', { 
+                count: data.users ? data.users.length : 0,
+                sample: data.users && data.users.length > 0 ? data.users[0] : null
+            });
+            
+            setUsers(data.users || []);
         } catch (err) {
             console.error('Error fetching users:', err);
-            setError('Failed to load users');
+            setError(err.message || 'Failed to load users');
+            
+            // Set empty users array to prevent UI from breaking
+            setUsers([]);
         } finally {
             setLoading(false);
         }
@@ -136,11 +184,9 @@ const ManageAccounts = () => {
 
         if (!validateForm()) {
             return;
-        }
-
-        try {
+        }        try {
             setLoading(true);
-            const response = await fetch(`/api/accounts/${user.accountId}/users`, {
+            const response = await fetch(`/api/account/users?accountId=${user.accountId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -172,12 +218,10 @@ const ManageAccounts = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    // Toggle user active status
+    };    // Toggle user active status
     const toggleUserStatus = async (userId, isCurrentlyActive) => {
         try {
-            const response = await fetch(`/api/accounts/${user.accountId}/users?userId=${userId}`, {
+            const response = await fetch(`/api/account/users?accountId=${user.accountId}&userId=${userId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -201,15 +245,9 @@ const ManageAccounts = () => {
 
     if (!user || !user.isAdmin) {
         return null; // Hide content from non-admins
-    }
-
-    return (
-        <>
-            <Head>
-                <title>Manage Users | InnVestAI</title>
-            </Head>
-
-            <div className="min-h-screen bg-neutral-50 py-6">
+    }    return (
+        <Layout title="Manage Users">
+            <div className="py-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="md:flex md:items-center md:justify-between mb-6">
                         <div className="flex-1 min-w-0">
@@ -473,9 +511,8 @@ const ManageAccounts = () => {
                             )}
                         </ul>
                     </div>
-                </div>
-            </div>
-        </>
+                </div>            </div>
+        </Layout>
     );
 };
 

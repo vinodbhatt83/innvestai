@@ -1,6 +1,6 @@
 // pages/api/users/index.js
 import { auth, userManager } from '../../../lib/auth';
-import { withAuth } from '../../../lib/middleware';
+import { withAuth } from '../../../middleware/auth';
 
 async function handler(req, res) {
     const { method } = req;

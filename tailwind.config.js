@@ -3,17 +3,16 @@ module.exports = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
-  ],
-  theme: {
+  ],  theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#1e3a8a', // Dark navy blue from the InnVestAI logo
-          light: '#2563eb',
+          DEFAULT: '#1A2A4A', // Dark navy blue from the InnVestAI logo
+          light: '#2c3e62',
         },
         secondary: {
-          DEFAULT: '#10b981', // Teal/green from the InnVestAI theme
-          light: '#34d399',
+          DEFAULT: '#1CB4A9', // Teal from the InnVestAI logo
+          light: '#25d9cc',
         },
         neutral: {
           50: '#f9fafb',

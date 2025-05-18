@@ -1,6 +1,6 @@
 // pages/api/account/plans.js
 import { query } from '../../../lib/db';
-import { withAuth } from '../../../lib/middleware';
+import { withAuth } from '../../../middleware/auth';
 
 async function handler(req, res) {
     const { method } = req;

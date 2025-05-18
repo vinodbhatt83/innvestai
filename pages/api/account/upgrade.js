@@ -1,7 +1,7 @@
 // pages/api/account/upgrade.js
 import { accountManager } from '../../../lib/auth';
 import { query } from '../../../lib/db';
-import { withAuth } from '../../../lib/middleware';
+import { withAuth } from '../../../middleware/auth';
 // Import your payment processing library here (e.g., Stripe)
 // import { stripe } from '../../../lib/stripe';
 
