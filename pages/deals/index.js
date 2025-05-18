@@ -90,6 +90,13 @@ const DealsListPage = () => {
     }).format(date);
   };
 
+  const formatDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const durationYears = Math.round((end - start) / (365 * 24 * 60 * 60 * 1000));
+    return `${durationYears} ${durationYears === 1 ? 'year' : 'years'}`;
+  };
+
   return (
     <Layout title="Deals">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -148,7 +155,10 @@ const DealsListPage = () => {
                             Deal Name
                           </th>
                           <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
-                            Property
+                            Location
+                          </th>
+                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
+                            Rooms
                           </th>
                           <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
                             Investment
@@ -157,7 +167,7 @@ const DealsListPage = () => {
                             Return
                           </th>
                           <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
-                            Timeframe
+                            Duration
                           </th>
                           <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
                             Status
@@ -170,7 +180,7 @@ const DealsListPage = () => {
                       <tbody className="divide-y divide-neutral-200 bg-white">
                         {deals.length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="py-10 text-center text-sm text-neutral-500">
+                            <td colSpan="8" className="py-10 text-center text-sm text-neutral-500">
                               No deals found. Create your first deal to get started.
                             </td>
                           </tr>
@@ -185,7 +195,10 @@ const DealsListPage = () => {
                                 </Link>
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
-                                {deal.property_name}
+                                {deal.city || ''}{deal.city && deal.state ? ', ' : ''}{deal.state || ''}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
+                                {deal.number_of_rooms || 'N/A'}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
                                 {formatCurrency(deal.investment_amount)}
@@ -194,7 +207,7 @@ const DealsListPage = () => {
                                 {deal.expected_return}%
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
-                                {formatDate(deal.start_date)} - {formatDate(deal.end_date)}
+                                {formatDuration(deal.start_date, deal.end_date)}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(deal.status)}`}>

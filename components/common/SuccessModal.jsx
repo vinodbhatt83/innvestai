@@ -1,16 +1,25 @@
 import React, { useEffect } from 'react';
 
-const SuccessModal = ({ isOpen, onClose, title, message, redirectDelay = 5000 }) => {
+const SuccessModal = ({ 
+  isOpen, 
+  onClose, 
+  onStay, 
+  title, 
+  message, 
+  redirectDelay = 5000, 
+  showStayButton = false,
+  redirectMessage = "Redirecting in a few seconds..."
+}) => {
   // Auto close/redirect after delay
   useEffect(() => {
-    if (isOpen && onClose) {
+    if (isOpen && onClose && !showStayButton) {
       const timer = setTimeout(() => {
         onClose();
       }, redirectDelay);
       
       return () => clearTimeout(timer);
     }
-  }, [isOpen, onClose, redirectDelay]);
+  }, [isOpen, onClose, redirectDelay, showStayButton]);
 
   if (!isOpen) return null;
 
@@ -44,30 +53,47 @@ const SuccessModal = ({ isOpen, onClose, title, message, redirectDelay = 5000 })
               <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
-            </div>
-            <div>
+            </div>            <div>
               <p className="text-neutral-700">{message}</p>
-              <p className="text-sm text-neutral-500 mt-1">Redirecting in a few seconds...</p>
+              {!showStayButton && <p className="text-sm text-neutral-500 mt-1">{redirectMessage}</p>}
+            </div>          </div>
+          
+          {!showStayButton ? (
+            <>
+              {/* Countdown bar */}
+              <div className="w-full bg-neutral-200 rounded-full h-2 mt-4">
+                <div 
+                  className="bg-secondary h-2 rounded-full transition-all duration-100"
+                  style={{ 
+                    width: '100%',
+                    animation: `countdown ${redirectDelay/1000}s linear forwards`
+                  }}
+                ></div>
+              </div>
+              
+              <style jsx>{`
+                @keyframes countdown {
+                  from { width: 100%; }
+                  to { width: 0%; }
+                }
+              `}</style>
+            </>
+          ) : (
+            <div className="flex justify-end space-x-4 mt-6">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 border border-neutral-300 rounded-md shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+              >
+                View Deal Details
+              </button>
+              <button
+                onClick={onStay}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+              >
+                Continue with Assumptions
+              </button>
             </div>
-          </div>
-          
-          {/* Countdown bar */}
-          <div className="w-full bg-neutral-200 rounded-full h-2 mt-4">
-            <div 
-              className="bg-secondary h-2 rounded-full transition-all duration-100"
-              style={{ 
-                width: '100%',
-                animation: `countdown ${redirectDelay/1000}s linear forwards`
-              }}
-            ></div>
-          </div>
-          
-          <style jsx>{`
-            @keyframes countdown {
-              from { width: 100%; }
-              to { width: 0%; }
-            }
-          `}</style>
+          )}
         </div>
       </div>
     </div>

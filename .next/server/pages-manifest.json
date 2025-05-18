@@ -2,15 +2,15 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/analytics/market-trends": "pages/analytics/market-trends.js",
-  "/deals/create": "pages/deals/create.js",
-  "/api/debug/users": "pages/api/debug/users.js",
-  "/admin/accounts": "pages/admin/accounts.js",
-  "/api/roles": "pages/api/roles.js",
+  "/deals/[id]/edit": "pages/deals/[id]/edit.js",
+  "/deals/[id]": "pages/deals/[id].js",
+  "/api/deals/[id]": "pages/api/deals/[id].js",
+  "/login": "pages/login.js",
   "/": "pages/index.js",
   "/api/analytics/market-dashboard": "pages/api/analytics/market-dashboard.js",
-  "/api/analytics/portfolio-breakdown": "pages/api/analytics/portfolio-breakdown.js",
-  "/api/analytics/insights": "pages/api/analytics/insights.js",
+  "/api/auth/login": "pages/api/auth/login.js",
   "/api/deals": "pages/api/deals.js",
-  "/api/analytics/portfolio-stats": "pages/api/analytics/portfolio-stats.js"
+  "/api/analytics/insights": "pages/api/analytics/insights.js",
+  "/api/analytics/portfolio-stats": "pages/api/analytics/portfolio-stats.js",
+  "/api/analytics/portfolio-breakdown": "pages/api/analytics/portfolio-breakdown.js"
 }

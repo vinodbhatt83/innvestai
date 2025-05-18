@@ -95,20 +95,47 @@ const ManageAccounts = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const fetchRoles = async () => {
+    };    const fetchRoles = async () => {
         try {
-            const response = await fetch('/api/roles');
-
+            console.log('Fetching roles from API...');
+            
+            // Try the regular endpoint first
+            let response;
+            try {
+                response = await fetch('/api/roles');
+                console.log('Regular roles API response status:', response.status);
+            } catch (regularError) {
+                console.error('Regular roles API failed, trying debug endpoint:', regularError);
+                // Fall back to debug endpoint if regular endpoint fails
+                response = await fetch('/api/debug/roles');
+                console.log('Debug roles API response status:', response.status);
+            }
+            
             if (!response.ok) {
-                throw new Error('Failed to fetch roles');
+                const errorText = await response.text();
+                console.error('API error response:', { 
+                    status: response.status,
+                    text: errorText
+                });
+                throw new Error(`Failed to fetch roles: ${response.status}`);
             }
 
             const data = await response.json();
-            setRoles(data.roles);
+            console.log('Roles fetched successfully:', { 
+                count: data.roles ? data.roles.length : 0,
+                source: data.debug ? 'debug endpoint' : 'regular endpoint'
+            });
+            
+            setRoles(data.roles || []);
         } catch (err) {
             console.error('Error fetching roles:', err);
+            // Set default roles if the API fails
+            setRoles([
+                { role_id: 1, role_name: 'Administrator' },
+                { role_id: 2, role_name: 'Analyst' },
+                { role_id: 3, role_name: 'Viewer' }
+            ]);
+            setError(prev => prev || `${err.message}. Using default roles instead.`);
         }
     };
 

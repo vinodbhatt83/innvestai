@@ -172,7 +172,7 @@ const DashboardPage = () => {
 
   return (
     <Layout title="Dashboard">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-full mx-auto px-1 py-4">
         <div className="md:flex md:items-center md:justify-between mb-8">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">

@@ -1,7 +1,9 @@
 // pages/api/deals/[id].js
 import { query } from '../../../lib/db';
+import { saveActivityLog } from '../../../utils/activityLogger';
+import { withAuth } from '../../../middleware/auth';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const { id } = req.query;
   
   if (req.method === 'GET') {
@@ -204,14 +206,127 @@ export default async function handler(req, res) {
         market_comparison: marketComparison,
         performance_metrics: performanceMetrics
       });
-      
-      res.status(200).json(dealDetails);
+        res.status(200).json(dealDetails);
     } catch (error) {
       console.error('Error fetching deal details:', error);
       res.status(500).json({ error: 'Failed to fetch deal details', details: error.message });
     }
+  } else if (req.method === 'PUT') {
+    try {
+      const { 
+        deal_name, 
+        property_name, 
+        property_address, 
+        city, 
+        state,
+        number_of_rooms,
+        property_type, 
+        status
+      } = req.body;
+
+      // Validate required fields
+      if (!deal_name) {
+        return res.status(400).json({ error: 'Deal name is required' });
+      }
+
+      // Get the current column names for the deals table
+      const dealColumnsQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'deals'
+      `;
+      
+      const dealColumns = await query(dealColumnsQuery);
+      const dealColumnNames = dealColumns.rows.map(row => row.column_name);
+      
+      // Build the update query dynamically based on available columns
+      const updateFields = [];
+      const queryParams = [id]; // First param is the deal ID
+      let paramIndex = 2; // Starts at 2 since $1 is used for deal_id
+      
+      if (dealColumnNames.includes('deal_name')) {
+        updateFields.push(`deal_name = $${paramIndex++}`);
+        queryParams.push(deal_name);
+      }
+      
+      if (dealColumnNames.includes('property_name')) {
+        updateFields.push(`property_name = $${paramIndex++}`);
+        queryParams.push(property_name);
+      }
+      
+      if (dealColumnNames.includes('property_address')) {
+        updateFields.push(`property_address = $${paramIndex++}`);
+        queryParams.push(property_address);
+      }
+      
+      if (dealColumnNames.includes('city')) {
+        updateFields.push(`city = $${paramIndex++}`);
+        queryParams.push(city);
+      }
+      
+      if (dealColumnNames.includes('state')) {
+        updateFields.push(`state = $${paramIndex++}`);
+        queryParams.push(state);
+      }
+      
+      if (dealColumnNames.includes('number_of_rooms')) {
+        updateFields.push(`number_of_rooms = $${paramIndex++}`);
+        queryParams.push(number_of_rooms ? parseInt(number_of_rooms) : null);
+      }
+      
+      if (dealColumnNames.includes('property_type')) {
+        updateFields.push(`property_type = $${paramIndex++}`);
+        queryParams.push(property_type);
+      }
+      
+      if (dealColumnNames.includes('status')) {
+        updateFields.push(`status = $${paramIndex++}`);
+        queryParams.push(status);
+      }
+      
+      if (dealColumnNames.includes('updated_at')) {
+        updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+      }
+      
+      if (updateFields.length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
+      
+      const updateQuery = `
+        UPDATE deals 
+        SET ${updateFields.join(', ')} 
+        WHERE deal_id = $1 
+        RETURNING *`;
+      
+      console.log('Update query:', updateQuery);
+      console.log('Query params:', queryParams);
+      
+      const result = await query(updateQuery, queryParams);
+        if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Deal not found or could not be updated' });
+      }
+      
+      // Log the activity
+      try {
+        await saveActivityLog({
+          user_id: req.user?.id || req.user?.user_id || 'system',
+          action: 'UPDATE_DEAL',
+          entity_type: 'DEAL',
+          entity_id: id,
+          details: `Updated deal ${deal_name}`
+        });
+      } catch (logError) {
+        console.error('Error logging deal update activity:', logError);
+        // Continue even if logging fails
+      }
+      
+      res.status(200).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error updating deal:', error);
+      res.status(500).json({ error: 'Failed to update deal', details: error.message });
+    }
   } else {
-    res.setHeader('Allow', ['GET']);
+    res.setHeader('Allow', ['GET', 'PUT']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
@@ -285,3 +400,5 @@ const generateMockMarketComparison = () => {
     { market_name: 'Philadelphia', avg_revpar: 145.80, avg_adr: 195.40, avg_occupancy: 0.74 }
   ];
 };
+
+export default withAuth(handler);

@@ -20,16 +20,14 @@ const Layout = ({ children, title = 'InnVestAI' }) => {
   const isActive = (href) => {
     return router.pathname === href || router.pathname.startsWith(`${href}/`);
   };
-
   return (
     <div className="min-h-screen bg-neutral-50">      <Head>
         <title>{title} | Hotel Investment Analytics</title>
         <meta name="description" content="AI-powered hotel investment analytics" />
         <link rel="icon" href="/theme-favicon.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/favicon.ico" />
-      </Head>      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      </Head>      {/* Navigation */}      <nav className="bg-white shadow-sm">
+        <div className="max-w-full mx-auto px-1 sm:px-2 lg:px-3">
           <div className="flex justify-between h-20">
             <div className="flex items-center">              <Link href="/">
                 <span className="flex-shrink-0 flex items-center cursor-pointer py-2">
@@ -131,17 +129,13 @@ const Layout = ({ children, title = 'InnVestAI' }) => {
             </div>
           )}
         </div>
-      </nav>
-
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      </nav>      {/* Main content */}
+      <main className="max-w-full mx-auto px-1 py-4">
         {children}
-      </main>
-
-      {/* Footer */}
+      </main>      {/* Footer */}
       <footer className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="border-t border-neutral-200 pt-6">
+        <div className="max-w-full mx-auto px-1 py-3">
+          <div className="border-t border-neutral-200 pt-4">
             <p className="text-center text-sm text-neutral-500">
               &copy; {new Date().getFullYear()} InnVestAI. All rights reserved.
             </p>
