@@ -118,6 +118,20 @@ function DealCreationForm() {
                 };
                 
                 setMetrics(initialMetrics);
+                  // If this is a final submission (from the last tab), save all tabs' data
+                if (activeStep === 'ffe-reserve') {
+                    try {
+                        // Save the assumption data for the current tab first
+                        await saveDealAssumptionTab('ffe-reserve', result.deal_id || result.id, formData);
+                        console.log('Successfully saved FFE Reserve data');
+                    } catch (error) {
+                        console.error('Error saving FFE Reserve data:', error);
+                        setMessage({
+                            type: 'error',
+                            text: `Error saving FFE Reserve data: ${error.message || 'Unknown error'}`
+                        });
+                    }
+                }
                 
                 // Show success modal with option to stay or go to details
                 setShowSuccessModal(true);
@@ -196,8 +210,7 @@ function DealCreationForm() {
             });
         }
     };
-    
-    // Handle property selection from dropdown
+      // Handle property selection from dropdown
     const handlePropertySelect = (property) => {
         console.log("Selected property:", property);
         
@@ -222,38 +235,39 @@ function DealCreationForm() {
             city: city,
             state: state,
             number_of_rooms: rooms,
-            property_type: propertyType || 'Luxury' // Ensure property type has a value
+            property_type: propertyType || 'Luxury', // Ensure property type has a value
+            deal_name: `${propertyName} Investment` // Add deal_name to ensure it's available
         }));
         
         // Clear validation errors for property fields
         setValidationErrors({});
-        
-        // Automatically submit the form after a short delay
+          // Automatically submit the form after a short delay
         setTimeout(() => {
-            // Create deal data
+            // Create deal data - using the prepareTabDataForSubmission to get any default values
+            // This ensures property submission gets the same default handling as other tabs
+            const preparedFormData = prepareTabDataForSubmission();
+            
             const dealData = {
-                deal_name: `${propertyName} Investment`,
+                deal_name: preparedFormData.deal_name,
                 property_key: property[propertyIdField],
-                property_name: propertyName,
-                property_address: propertyAddress,
-                city: city,
-                state: state,
-                number_of_rooms: rooms,
-                property_type: propertyType || 'Luxury',
-                investment_amount: 1000000, // Default value
-                expected_return: 8.5, // Default value
-                hold_period: 5, // Default value
-                start_date: new Date().toISOString().split('T')[0],
-                end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().split('T')[0],
+                property_name: preparedFormData.property_name,
+                property_address: preparedFormData.property_address,
+                city: preparedFormData.city,
+                state: preparedFormData.state,
+                number_of_rooms: preparedFormData.number_of_rooms,
+                property_type: preparedFormData.property_type,
+                investment_amount: preparedFormData.purchase_price || 1000000, // Default value
+                expected_return: preparedFormData.cap_rate_going_in || 8.5, // Default value
+                hold_period: preparedFormData.hold_period || 5, // Default value
+                start_date: preparedFormData.start_date || new Date().toISOString().split('T')[0],
+                end_date: preparedFormData.end_date || new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().split('T')[0],
                 status: 'Draft'
             };
             
             // Directly submit the deal data
             submitDeal(dealData);
         }, 500);
-    };
-
-    // Handle form submission (for manual submission)
+    };    // Handle form submission (for manual submission)
     const handleSubmit = async () => {
         setMessage({ type: '', text: '' });
         
@@ -269,32 +283,73 @@ function DealCreationForm() {
             return;
         }
 
-        // Prepare data for submission
+        // If the deal has already been created, make sure we save the current tab first
+        if (dealCreated && createdDealId) {
+            console.log(`Deal already exists with ID: ${createdDealId}. Saving current tab first.`);
+            const saved = await saveCurrentTab();
+            if (!saved) {
+                console.error(`Failed to save the current ${activeStep} tab. Stopping submission.`);
+                return; // Don't proceed if there was an error saving the current tab
+            }
+        } else {
+            console.log('Creating new deal from form submission');
+        }
+
+        // Prepare data for submission, using the prepared tab data function to get defaults
+        const preparedData = prepareTabDataForSubmission();
+        
         const dealData = {
-            deal_name: `${formData.property_name} Investment`,
-            property_key: formData.property_key,
-            property_name: formData.property_name,
-            property_address: formData.property_address,
-            city: formData.city,
-            state: formData.state,
-            number_of_rooms: formData.number_of_rooms,
-            property_type: formData.property_type,
-            investment_amount: formData.purchase_price || 1000000, // Default if not provided
-            expected_return: formData.cap_rate_going_in || 8.5, // Default if not provided
-            hold_period: formData.hold_period,
-            start_date: formData.start_date,
-            end_date: formData.end_date,
-            status: 'Draft'
+            deal_name: preparedData.deal_name || `${preparedData.property_name} Investment`,
+            property_key: preparedData.property_key,
+            property_name: preparedData.property_name,
+            property_address: preparedData.property_address,
+            city: preparedData.city,
+            state: preparedData.state,
+            number_of_rooms: preparedData.number_of_rooms,
+            property_type: preparedData.property_type,
+            investment_amount: preparedData.purchase_price || 1000000, // Default if not provided
+            expected_return: preparedData.cap_rate_going_in || 8.5, // Default if not provided
+            hold_period: preparedData.hold_period || 5,
+            start_date: preparedData.start_date || new Date().toISOString().split('T')[0],
+            end_date: preparedData.end_date || new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().split('T')[0],
+            status: preparedData.status || 'Draft'
         };
         
+        console.log('Submitting prepared deal data:', dealData);
         submitDeal(dealData);
-    };
-      // Handle success modal navigation
-    const handleSuccessModalClose = () => {
+    };// Handle success modal navigation
+    const handleSuccessModalClose = async () => {
         setShowSuccessModal(false);
+        
+        // Show loading state
+        setMessage({
+            type: 'success',
+            text: 'Finalizing deal data. Please wait...'
+        });
+        
         if (createdDealId) {
-            // Redirect to deal details page
-            router.push(`/deals/${createdDealId}`);
+            try {
+                // Save the first tab (ffe-reserve) data if we're on the final step
+                // This ensures all data is saved before redirecting
+                if (activeStep === 'ffe-reserve') {
+                    const preparedData = prepareTabDataForSubmission();
+                    await saveDealAssumptionTab('ffe-reserve', createdDealId, preparedData);
+                }
+                
+                // Redirect to deal details page
+                router.push(`/deals/${createdDealId}`);
+            } catch (error) {
+                console.error('Error saving final data:', error);
+                setMessage({
+                    type: 'error',
+                    text: `Error finalizing deal: ${error.message || 'Unknown error'}`
+                });
+                
+                // Still allow user to navigate after a delay even if there was an error
+                setTimeout(() => {
+                    router.push(`/deals/${createdDealId}`);
+                }, 3000);
+            }
         }
     };
       // Handle stay on the page and continue with assumptions
@@ -312,12 +367,10 @@ function DealCreationForm() {
         setTimeout(() => {
             setMessage({ type: '', text: '' });
         }, 5000);
-    };
-
-    // Save current tab data
+    };    // Save current tab data
     const saveCurrentTab = async () => {
-        // Don't save if we're on property details or deal hasn't been created yet
-        if (activeStep === 'property' || !dealCreated || !createdDealId) {
+        // Don't try to save if the deal hasn't been created yet
+        if (!dealCreated || !createdDealId) {
             return true;
         }
         
@@ -325,18 +378,233 @@ function DealCreationForm() {
         setMessage({ type: '', text: '' });
         
         try {
-            await saveDealAssumptionTab(activeStep, createdDealId, formData);
+            console.log(`Saving ${activeStep} tab for deal ${createdDealId}`);
+            
+            // Prepare form data with default values as needed
+            const preparedData = prepareTabDataForSubmission();
+            console.log(`Prepared ${activeStep} data with defaults:`, preparedData);
+            
+            // Always make sure deal_id is included in all tab data
+            preparedData.deal_id = createdDealId;
+            
+            // Add a consistent key format that our API expects
+            if (formData.property_key) {
+                preparedData.property_key = formData.property_key;
+            }
+            
+            // Save the tab data to the database 
+            const result = await saveDealAssumptionTab(activeStep, createdDealId, preparedData);
+            console.log(`Successfully saved ${activeStep} tab:`, result);
+            
+            // Show a temporary success message with proper tab name formatting
+            const tabName = activeStep.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            setMessage({
+                type: 'success',
+                text: `${tabName} saved successfully!`
+            });
+            
+            // Clear the message after 2 seconds
+            setTimeout(() => {
+                setMessage({ type: '', text: '' });
+            }, 2000);
+            
+            // Calculate updated metrics if needed
+            if (['acquisition', 'financing', 'disposition'].includes(activeStep)) {
+                const updatedMetrics = calculateMetrics(formData);
+                setPreviousMetrics(metrics);
+                setMetrics(updatedMetrics);
+            }
+            
             return true;
         } catch (error) {
             console.error(`Error saving ${activeStep} tab:`, error);
+            
+            // Extract more detailed error message if available
+            let errorMessage = error.message || 'Unknown error';
+            if (error.response) {
+                errorMessage = error.response.message || error.response.error || error.response.details || errorMessage;
+            }
+            
+            // Provide more helpful context in the error message
+            const tabName = activeStep.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             setMessage({
                 type: 'error',
-                text: `Error saving data: ${error.message}`
+                text: `Error saving ${tabName} data: ${errorMessage}`
             });
+            
+            // Log detailed error for debugging
+            console.error('Full error details:', {
+                step: activeStep,
+                dealId: createdDealId,
+                errorDetails: error
+            });
+            
             return false;
         } finally {
             setIsSavingTab(false);
         }
+    };// Ensure all required fields have default values before submitting
+    const prepareTabDataForSubmission = () => {
+        // Make a copy of form data to avoid modifying state directly
+        const preparedData = { ...formData };
+        
+        console.log(`Preparing data for ${activeStep} tab submission`);
+        
+        // Add default deal_id to all submissions
+        if (createdDealId) {
+            preparedData.deal_id = createdDealId;
+        }
+        
+        switch (activeStep) {
+            case 'property':
+                // Add defaults for property tab
+                if (!preparedData.deal_name) preparedData.deal_name = `${preparedData.property_name || 'New'} Investment`;
+                if (!preparedData.property_name) preparedData.property_name = 'New Property';
+                if (!preparedData.property_address) preparedData.property_address = '';
+                if (!preparedData.city) preparedData.city = '';
+                if (!preparedData.state) preparedData.state = '';
+                if (!preparedData.property_type) preparedData.property_type = 'Hotel';
+                if (!preparedData.number_of_rooms) preparedData.number_of_rooms = 100;
+                if (!preparedData.status) preparedData.status = 'Draft';
+                break;
+            
+            case 'acquisition':
+                // Add defaults for acquisition tab
+                if (!preparedData.acquisition_month) preparedData.acquisition_month = new Date().getMonth() + 1;
+                if (!preparedData.acquisition_year) preparedData.acquisition_year = new Date().getFullYear();
+                if (!preparedData.acquisition_costs) preparedData.acquisition_costs = 0;
+                if (!preparedData.cap_rate_going_in) preparedData.cap_rate_going_in = 8.0;
+                if (!preparedData.hold_period) preparedData.hold_period = 5;
+                if (!preparedData.purchase_price) preparedData.purchase_price = 1000000;
+                if (!preparedData.purchase_price_method) preparedData.purchase_price_method = 'Per Room';
+                if (!preparedData.purchase_price_per_key && preparedData.number_of_rooms && preparedData.purchase_price) {
+                    preparedData.purchase_price_per_key = Math.round(preparedData.purchase_price / preparedData.number_of_rooms);
+                } else if (!preparedData.purchase_price_per_key) {
+                    preparedData.purchase_price_per_key = 100000;
+                }
+                break;
+                
+            case 'financing':
+                // Add defaults for financing tab
+                if (!preparedData.loan_to_value) preparedData.loan_to_value = 65;
+                if (!preparedData.interest_rate) preparedData.interest_rate = 4.5;
+                if (!preparedData.loan_term) preparedData.loan_term = 5;
+                if (!preparedData.amortization_period) preparedData.amortization_period = 30;
+                if (!preparedData.debt_amount) preparedData.debt_amount = preparedData.purchase_price ? Math.round(preparedData.purchase_price * 0.65) : 650000;
+                if (!preparedData.equity_amount) preparedData.equity_amount = preparedData.purchase_price ? Math.round(preparedData.purchase_price * 0.35) : 350000;
+                if (!preparedData.lender_fee) preparedData.lender_fee = 1.0;
+                if (!preparedData.debt_coverage_ratio) preparedData.debt_coverage_ratio = 1.25;
+                break;
+                
+            case 'disposition':
+                // Add defaults for disposition tab
+                if (!preparedData.cap_rate_exit) preparedData.cap_rate_exit = preparedData.cap_rate_going_in ? parseFloat(preparedData.cap_rate_going_in) + 0.5 : 8.5;
+                if (!preparedData.sales_expense) preparedData.sales_expense = 2.0;
+                if (!preparedData.disposition_month) preparedData.disposition_month = 12;
+                if (!preparedData.disposition_year) {
+                    const baseYear = preparedData.acquisition_year ? parseInt(preparedData.acquisition_year) : new Date().getFullYear();
+                    const holdPeriod = preparedData.hold_period ? parseInt(preparedData.hold_period) : 5;
+                    preparedData.disposition_year = baseYear + holdPeriod;
+                }
+                break;
+                
+            case 'capital':
+                // Add defaults for Capital Expense tab
+                if (!preparedData.capex_type) preparedData.capex_type = 'Standard';
+                if (!preparedData.owner_funded_capex) preparedData.owner_funded_capex = 10.0;
+                if (!preparedData.capital_expense_year1) preparedData.capital_expense_year1 = 0;
+                if (!preparedData.capital_expense_year2) preparedData.capital_expense_year2 = 0;
+                if (!preparedData.capital_expense_year3) preparedData.capital_expense_year3 = 0;
+                if (!preparedData.capital_expense_year4) preparedData.capital_expense_year4 = 0;
+                if (!preparedData.capital_expense_year5) preparedData.capital_expense_year5 = 0;
+                break;
+                
+            case 'inflation':
+                // Add defaults for Inflation tab
+                if (!preparedData.inflation_rate_general) preparedData.inflation_rate_general = 2.5;
+                if (!preparedData.inflation_rate_revenue) preparedData.inflation_rate_revenue = 3.0;
+                if (!preparedData.inflation_rate_expenses) preparedData.inflation_rate_expenses = 2.8;
+                if (!preparedData.inflation_assumptions) preparedData.inflation_assumptions = 'Standard';
+                break;
+                
+            case 'penetration':
+                // Add defaults for Penetration Analysis tab
+                if (!preparedData.comp_name) preparedData.comp_name = 'Comp Set A';
+                if (!preparedData.comp_nbr_of_rooms) preparedData.comp_nbr_of_rooms = preparedData.number_of_rooms || 100;
+                if (!preparedData.market_adr_change) preparedData.market_adr_change = 3.0;
+                if (!preparedData.market_occupancy_pct) preparedData.market_occupancy_pct = 70.0;
+                if (!preparedData.market_penetration) preparedData.market_penetration = 100.0;
+                if (!preparedData.occupied_room_growth_pct) preparedData.occupied_room_growth_pct = 2.0;
+                if (!preparedData.property_adr_change) preparedData.property_adr_change = 3.5;
+                if (!preparedData.sample_hotel_occupancy) preparedData.sample_hotel_occupancy = 75.0;
+                break;
+                
+            case 'operating-revenue':
+                // Add defaults for Operating Revenue tab
+                if (!preparedData.adr_base) preparedData.adr_base = 195.0;
+                if (!preparedData.adr_growth) preparedData.adr_growth = 3.0;
+                if (!preparedData.other_revenue_percentage) preparedData.other_revenue_percentage = 25.0;
+                if (!preparedData.revpar_base) preparedData.revpar_base = preparedData.adr_base * 0.75;
+                if (!preparedData.revenues_total) preparedData.revenues_total = 0;
+                break;
+                
+            case 'departmental-expenses':
+                // Add defaults for Departmental Expenses tab
+                if (!preparedData.rooms_expense_par) preparedData.rooms_expense_par = 35.0;
+                if (!preparedData.rooms_expense_por) preparedData.rooms_expense_por = 25.0;
+                if (!preparedData.food_beverage_expense_par) preparedData.food_beverage_expense_par = 20.0;
+                if (!preparedData.food_beverage_expense_por) preparedData.food_beverage_expense_por = 75.0;
+                if (!preparedData.other_dept_expense_par) preparedData.other_dept_expense_par = 10.0;
+                if (!preparedData.other_dept_expense_por) preparedData.other_dept_expense_por = 50.0;
+                if (!preparedData.expenses_total) preparedData.expenses_total = 0;
+                break;
+                
+            case 'management-franchise':
+                // Add defaults for Management & Franchise tab
+                if (!preparedData.management_fee_base) preparedData.management_fee_base = 3.0;
+                if (!preparedData.management_fee_incentive) preparedData.management_fee_incentive = 10.0;
+                if (!preparedData.management_fee_percentage) preparedData.management_fee_percentage = 3.0;
+                if (!preparedData.franchise_fee_base) preparedData.franchise_fee_base = 5.0;
+                if (!preparedData.franchise_fee_percentage) preparedData.franchise_fee_percentage = 5.0;
+                if (!preparedData.brand_marketing_fee) preparedData.brand_marketing_fee = 2.0;
+                break;
+                
+            case 'undistributed-expenses-1':
+                // Add defaults for Undistributed Expenses 1 tab
+                if (!preparedData.admin_general_par) preparedData.admin_general_par = 15.0;
+                if (!preparedData.admin_general_por) preparedData.admin_general_por = 6.0;
+                if (!preparedData.sales_marketing_par) preparedData.sales_marketing_par = 12.0;
+                if (!preparedData.sales_marketing_por) preparedData.sales_marketing_por = 5.0;
+                if (!preparedData.property_ops_maintenance_par) preparedData.property_ops_maintenance_par = 15.0;
+                if (!preparedData.property_ops_maintenance_por) preparedData.property_ops_maintenance_por = 6.0;
+                break;
+                
+            case 'undistributed-expenses-2':
+                // Add defaults for Undistributed Expenses 2 tab
+                if (!preparedData.utilities_costs_par) preparedData.utilities_costs_par = 10.0;
+                if (!preparedData.utilities_costs_por) preparedData.utilities_costs_por = 4.0;
+                if (!preparedData.it_systems_par) preparedData.it_systems_par = 5.0;
+                if (!preparedData.it_systems_por) preparedData.it_systems_por = 2.0;
+                break;
+                
+            case 'non-operating-expenses':
+                // Add defaults for Non-Operating Expenses tab
+                if (!preparedData.property_taxes_par) preparedData.property_taxes_par = 25.0;
+                if (!preparedData.property_taxes_por) preparedData.property_taxes_por = 4.5;
+                if (!preparedData.insurance_par) preparedData.insurance_par = 8.0;
+                if (!preparedData.insurance_por) preparedData.insurance_por = 1.5;
+                if (!preparedData.income_tax_rate) preparedData.income_tax_rate = 21.0;
+                break;
+                
+            case 'ffe-reserve':
+                // Add defaults for FFE Reserve tab
+                if (!preparedData.ffe_reserve_percentage) preparedData.ffe_reserve_percentage = 4.0;
+                if (!preparedData.ffe_reserve_par) preparedData.ffe_reserve_par = 2000;
+                if (!preparedData.ffe_reserve_minimum) preparedData.ffe_reserve_minimum = 1500;
+                break;
+        }
+        
+        return preparedData;
     };
 
     // Validate current step before moving to next
@@ -371,9 +639,7 @@ function DealCreationForm() {
             default:
                 return true;
         }
-    };
-
-    // Handle moving to the next step
+    };    // Handle moving to the next step
     const handleNext = async () => {
         // Validate current step before proceeding
         if (!validateCurrentStep()) {
@@ -385,6 +651,17 @@ function DealCreationForm() {
             const saved = await saveCurrentTab();
             if (!saved) {
                 return;
+            }
+            
+            // Show a temporary success message for tab save
+            if (activeStep !== 'property') {
+                setMessage({
+                    type: 'success',
+                    text: `${activeStep.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} data saved successfully! Proceeding to next step...`
+                });
+                
+                // Give time for the user to see the success message
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
         

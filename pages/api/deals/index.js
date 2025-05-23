@@ -55,11 +55,106 @@ export default async function handler(req, res) {
         ]);
 
         // If we have deals and property_id exists, try to get property details
-        const deals = [...dealsResult.rows];
+        const deals = [...dealsResult.rows];        // This is just the part of the code that needs to be fixed in pages/api/deals/index.js
 
-        // This is just the part of the code that needs to be fixed in pages/api/deals/index.js
+        // Enhanced deal data processing
+        if (deals.length > 0) {
+          // Add default values for any missing fields and enhance with property info
+          for (let i = 0; i < deals.length; i++) {
+            // Calculate investment amount from purchase_price if available, otherwise use default
+            if (!deals[i].investment_amount && deals[i].purchase_price) {
+              deals[i].investment_amount = deals[i].purchase_price;
+            } else if (!deals[i].investment_amount) {
+              deals[i].investment_amount = 1000000; // Default to $1M if no amount available
+            }
 
-        // When enhancing each deal with property info in the GET handler:
+            // Set default return percentages based on property_type if not set
+            if (!deals[i].expected_return) {
+              switch(deals[i].property_type?.toLowerCase()) {
+                case 'luxury':
+                  deals[i].expected_return = 8.5;
+                  break;
+                case 'full service':
+                  deals[i].expected_return = 8.2;
+                  break;
+                case 'limited service':
+                  deals[i].expected_return = 8.8;
+                  break;
+                default:
+                  deals[i].expected_return = 8.5; // Default
+              }
+            }
+            
+            // Calculate price per key if possible
+            if (deals[i].purchase_price && deals[i].number_of_rooms) {
+              deals[i].price_per_key = Math.round(deals[i].purchase_price / deals[i].number_of_rooms);
+            }
+            
+            // Set default hold period if not present
+            if (!deals[i].hold_period) {
+              deals[i].hold_period = 5; // Default 5 year hold
+            }
+              // Try to get property data from dim_property
+            try {
+              // Check if dim_property table exists
+              const tableCheck = await query(`
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'dim_property'
+              `);
+              
+              if (tableCheck.rows.length > 0) {
+                // If deal has property_id, try to get property details
+                if (deals[i].property_id) {
+                  const propertyData = await query(`
+                    SELECT p.*, h.hotel_type_name 
+                    FROM dim_property p
+                    LEFT JOIN dim_hotel_type h ON p.hotel_type_key = h.hotel_type_key
+                    WHERE p.property_key = $1 OR p.property_id = $1
+                  `, [deals[i].property_id]);
+                  
+                  if (propertyData.rows.length > 0) {
+                    const property = propertyData.rows[0];
+                    
+                    // Add property details to deal
+                    deals[i] = {
+                      ...deals[i],
+                      property_name: property.property_name || deals[i].property_name,
+                      property_address: property.property_address || deals[i].property_address,
+                      city: property.city || deals[i].city,
+                      state: property.state || deals[i].state,
+                      property_type: property.hotel_type_name || deals[i].property_type,
+                      number_of_rooms: property.room_count || deals[i].number_of_rooms,
+                      star_rating: property.star_rating,
+                      brand: property.brand,
+                      chain_scale: property.chain_scale,
+                      year_built: property.year_built,
+                      year_renovated: property.year_renovated
+                    };
+                  }
+                }
+              }
+            } catch (err) {
+              console.log('Error getting property data:', err.message);
+            }
+            
+            // Get acquisition data if available (fetch from fact_deal_assumptions and dim_acquisition)
+            try {
+              const acquisitionData = await query(`
+                SELECT a.* 
+                FROM fact_deal_assumptions f
+                JOIN dim_acquisition a ON f.acquisition_id = a.acquisition_id
+                WHERE f.deal_id = $1
+              `, [deals[i].deal_id]);
+              
+              if (acquisitionData.rows.length > 0) {
+                deals[i] = { ...deals[i], ...acquisitionData.rows[0] };
+              }
+            } catch (err) {
+              console.log('No acquisition data found for deal:', deals[i].deal_id);
+            }
+          }
+        }
+          
         if (deals.length > 0 && hasPropertyId) {
           // Try to enhance deals with property info
           try {
@@ -91,12 +186,13 @@ export default async function handler(req, res) {
                     const propertyResult = await query(propertyQuery, [deal.property_id]);
                     const property = propertyResult.rows[0];
 
-                    if (property) {
-                      deals[i] = {
+                    if (property) {                      deals[i] = {
                         ...deal,
                         property_name: property.property_name,
                         hotel_type_name: property.hotel_type_name,
-                        market_name: property.market_name
+                        market_name: property.market_name,
+                        // Use property's room_count if available 
+                        number_of_rooms: property.room_count || deal.number_of_rooms
                       };
                     }
                   } catch (propError) {

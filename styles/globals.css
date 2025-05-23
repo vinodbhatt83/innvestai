@@ -7,6 +7,17 @@
   --primary-light: #2c3e62;
   --secondary: #1CB4A9;
   --secondary-light: #25d9cc;
+  --neutral-50: #f9fafb;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #d1d5db;
+  --neutral-400: #9ca3af;
+  --neutral-500: #6b7280;
+  --neutral-600: #4b5563;
+  --neutral-700: #374151;
+  --neutral-800: #1f2937;
+  --neutral-900: #111827;
+  --max-content-width: 1200px; /* Reduced from 1280px */
 }
 
 @theme inline {
@@ -30,5 +41,107 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* Container width limit for better desktop display */
+.max-w-full {
+  max-width: var(--max-content-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Logo styling */
+.flex-shrink-0 img {
+  height: 3.5rem;
+  margin-right: 1.5rem;
+}
+
+/* Balance the color scheme with more blue elements */
+.bg-secondary {
+  background-color: var(--primary);
+}
+
+.text-secondary {
+  color: var(--primary);
+}
+
+.border-secondary {
+  border-color: var(--primary);
+}
+
+.hover\:border-secondary:hover {
+  border-color: var(--primary);
+}
+
+.focus\:ring-secondary:focus {
+  --tw-ring-color: var(--primary);
+}
+
+/* Keep create deal button with teal color for contrast */
+.bg-secondary.text-white {
+  background-color: var(--secondary);
+}
+
+.bg-secondary.text-white:hover {
+  background-color: var(--secondary-light);
+}
+
+/* Card and dashboard elements with mixed color scheme */
+.dashboard-card {
+  border: 1px solid var(--neutral-200);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-stat-card {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Login page specific styles */
+.login-container {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.login-button {
+  background-color: var(--secondary);
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.login-button:hover {
+  background-color: var(--secondary-light);
+}
+
+/* Navbar and menu improvements */
+.bg-secondary-light {
+  background-color: rgba(26, 42, 74, 0.1);
+}
+
+.nav-item-active {
+  border-color: var(--primary);
+  color: var(--neutral-900);
+}
+
+.nav-item-inactive {
+  border-color: transparent;
+  color: var(--neutral-500);
+}
+
+.nav-item-inactive:hover {
+  border-color: var(--primary-light);
+  color: var(--neutral-700);
 }

@@ -9,7 +9,20 @@
  */
 export const saveDealAssumptionTab = async (tabName, dealId, formData) => {
   try {
-  // Maps tab names to API endpoint parameters
+    // Validate inputs before proceeding
+    if (!tabName) {
+      throw new Error('Tab name is required for saving assumption data');
+    }
+    
+    if (!dealId) {
+      throw new Error('Deal ID is required for saving assumption data');
+    }
+    
+    if (!formData || Object.keys(formData).length === 0) {
+      throw new Error('Form data is empty or invalid');
+    }
+    
+    // Maps tab names to API endpoint parameters
     const tabTypeMap = {
       'property': 'property',  // Added property tab
       'acquisition': 'acquisition',
@@ -28,57 +41,124 @@ export const saveDealAssumptionTab = async (tabName, dealId, formData) => {
     };
     
     if (!tabTypeMap[tabName]) {
-      throw new Error(`Unknown tab name: ${tabName}`);
+      throw new Error(`Unknown tab name: ${tabName}. Valid tabs are: ${Object.keys(tabTypeMap).join(', ')}`);
+    }
+    
+    // Always ensure deal_id is in the payload
+    const extractedData = extractTabData(tabName, formData);
+    
+    // Perform additional validation on critical fields
+    if (tabName === 'acquisition' && !extractedData.acquisition_year) {
+      extractedData.acquisition_year = new Date().getFullYear();
+      console.log('Added default acquisition_year:', extractedData.acquisition_year);
+    }
+    
+    if (tabName === 'disposition' && !extractedData.disposition_year) {
+      // Default disposition to 5 years from now if not specified
+      extractedData.disposition_year = new Date().getFullYear() + 5;
+      console.log('Added default disposition_year:', extractedData.disposition_year);
     }
     
     // Construct the request payload
     const payload = {
       deal_id: dealId,
-      ...extractTabData(tabName, formData)
-    };    // Use our dynamic API endpoint with the tab type as a parameter
+      ...extractedData
+    };
+    
+    // Log data being sent for debugging
+    console.log(`Data being sent for ${tabName} tab:`, payload);
+    
+    // Use our dynamic API endpoint with the tab type as a parameter
     const endpoint = `/api/deals/assumptions/${tabTypeMap[tabName]}`;
-    console.log(`Saving tab ${tabName} to endpoint: ${endpoint}`, payload);
+    console.log(`Saving tab ${tabName} to endpoint: ${endpoint}`);
     
-    // Make the API request
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    // Log the full response status and text for debugging
-    console.log(`Response status for ${tabName}: ${response.status} ${response.statusText}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      let errorMessage;
+    // Make the API request with enhanced error handling
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        credentials: 'same-origin' // Include cookies for auth if they exist
+      });
       
-      try {
-        errorData = JSON.parse(errorText);
-        console.error(`Error response for ${tabName}:`, errorData);
+      // Log the full response status for debugging
+      console.log(`Response status for ${tabName}: ${response.status} ${response.statusText}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        let errorMessage;
         
-        // Extract detailed error message if available
-        errorMessage = errorData.message || errorData.error || errorData.details || 
-                       `Failed to save ${tabName} tab (Status: ${response.status})`;
-      } catch (e) {
-        console.error(`Error response (not JSON) for ${tabName}:`, errorText);
-        errorMessage = errorText || `Failed to save ${tabName} tab (Status: ${response.status})`;
-        errorData = { error: errorMessage };
+        try {
+          errorData = JSON.parse(errorText);
+          console.error(`Error response for ${tabName}:`, errorData);
+          
+          // Extract detailed error message if available
+          errorMessage = errorData.message || errorData.error || errorData.details || 
+                        `Failed to save ${tabName} tab (Status: ${response.status})`;
+        } catch (e) {
+          console.error(`Error response (not JSON) for ${tabName}:`, errorText);
+          errorMessage = errorText || `Failed to save ${tabName} tab (Status: ${response.status})`;
+          errorData = { error: errorMessage };
+        }
+        
+        // Create a custom error with additional details
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.response = errorData;
+        error.context = {
+          tabName,
+          dealId,
+          sentData: payload,
+          endpoint
+        };
+        throw error;
       }
       
-      // Create a custom error with additional details
-      const error = new Error(errorMessage);
-      error.status = response.status;
-      error.response = errorData;
-      throw error;
+      // Return the API response data
+      const responseData = await response.json();
+      console.log(`Successfully saved ${tabName} data:`, responseData);
+      return responseData;
+    } catch (fetchError) {
+      // Try the dynamic [tabType] endpoint as a fallback
+      console.log(`Error with direct endpoint, trying dynamic endpoint for ${tabName}`);
+      const fallbackEndpoint = `/api/deals/assumptions/[tabType]?tabType=${tabTypeMap[tabName]}`;
+      
+      try {
+        const fallbackResponse = await fetch(fallbackEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (fallbackResponse.ok) {
+          const responseData = await fallbackResponse.json();
+          console.log(`Successfully saved ${tabName} data using fallback:`, responseData);
+          return responseData;
+        } else {
+          // Both attempts failed - throw the original error with enhanced context
+          fetchError.fallbackFailed = true;
+          fetchError.fallbackStatus = fallbackResponse.status;
+          throw fetchError;
+        }
+      } catch (fallbackError) {
+        // Both attempts failed completely
+        console.error(`Fallback attempt also failed for ${tabName}:`, fallbackError);
+        throw fetchError; // throw the original error
+      }
     }
-    
-    return await response.json();
   } catch (error) {
     console.error(`Error saving ${tabName} tab:`, error);
+    // Add more context to the error
+    if (!error.context) {
+      error.context = {
+        tabName,
+        dealId,
+        timestamp: new Date().toISOString()
+      };
+    }
     throw error;
   }
 };
@@ -92,37 +172,81 @@ export const saveDealAssumptionTab = async (tabName, dealId, formData) => {
 const extractTabData = (tabName, formData) => {
   // Define which form fields belong to which tabs
   const tabFields = {
-    'property': ['deal_name', 'property_name', 'property_address', 'city', 'state', 'property_type', 'number_of_rooms', 'status'],
+    'property': ['deal_name', 'property_name', 'property_address', 'city', 'state', 'property_type', 'number_of_rooms', 'status', 'property_key'],
     'acquisition': ['acquisition_month', 'acquisition_year', 'acquisition_costs', 'cap_rate_going_in', 
-                   'hold_period', 'purchase_price', 'purchase_price_method'],
+                   'hold_period', 'purchase_price', 'purchase_price_method', 'purchase_price_per_key'],
     'financing': ['loan_to_value', 'loan_amount', 'interest_rate', 'loan_term', 
-                 'amortization_period', 'debt_coverage_ratio', 'lender_fee'],
-    'disposition': ['exit_cap_rate', 'selling_costs', 'disposition_month', 'disposition_year'],
-    // Updated mappings for other tabs based on our default values
-    'capital': ['capex_budget', 'capex_contingency', 'capital_expense_year1', 'capital_expense_year2', 
+                 'amortization_period', 'debt_coverage_ratio', 'lender_fee', 'debt_amount', 'equity_amount'],
+    'disposition': ['cap_rate_exit', 'sales_expense', 'disposition_month', 'disposition_year'],
+    // Updated mappings based on actual database fields
+    'capital': ['capex_type', 'owner_funded_capex', 'capital_expense_year1', 'capital_expense_year2', 
                'capital_expense_year3', 'capital_expense_year4', 'capital_expense_year5'],
-    'inflation': ['inflation_rate_general', 'inflation_rate_revenue', 'inflation_rate_expenses'],
-    'penetration': ['market_penetration', 'stabilized_occupancy', 'ramp_up_year1', 
-                   'ramp_up_year2', 'ramp_up_year3'],
-    'operating-revenue': ['adr_base', 'revpar_base', 'other_revenue_percentage', 'adr_growth'],
-    'departmental-expenses': ['rooms_department_expense', 'food_beverage_expense', 'other_dept_expense_pct'],
-    'management-franchise': ['management_fee_percentage', 'franchise_fee_percentage', 'management_fee_incentive'],
-    'undistributed-expenses-1': ['admin_general_percentage', 'sales_marketing_percentage', 'property_operations_percentage'],
-    'undistributed-expenses-2': ['utility_costs_percentage', 'it_systems_percentage'],
-    'non-operating-expenses': ['property_tax_percentage', 'insurance_percentage', 'income_tax_rate'],
-    'ffe-reserve': ['ffe_reserve_percentage', 'ffe_reserve_minimum']
+    'inflation': ['inflation_rate_general', 'inflation_rate_revenue', 'inflation_rate_expenses', 'inflation_assumptions'],
+    'penetration': ['comp_name', 'comp_nbr_of_rooms', 'market_adr_change', 'market_occupancy_pct', 
+                   'market_penetration', 'occupied_room_growth_pct', 'property_adr_change', 'sample_hotel_occupancy'],
+    'operating-revenue': ['adr_base', 'adr_growth', 'other_revenue_percentage', 'revpar_base', 'revenues_total'],
+    'departmental-expenses': ['rooms_expense_par', 'rooms_expense_por', 'food_beverage_expense_par', 'food_beverage_expense_por', 'other_dept_expense_par', 'other_dept_expense_por', 'expenses_total'],
+    'management-franchise': ['management_fee_base', 'management_fee_incentive', 'management_fee_percentage', 'franchise_fee_base', 'franchise_fee_percentage', 'brand_marketing_fee'],
+    'undistributed-expenses-1': ['admin_general_par', 'admin_general_por', 'sales_marketing_par', 'sales_marketing_por', 'property_ops_maintenance_par', 'property_ops_maintenance_por'],
+    'undistributed-expenses-2': ['utilities_costs_par', 'utilities_costs_por', 'it_systems_par', 'it_systems_por'],
+    'non-operating-expenses': ['property_taxes_par', 'property_taxes_por', 'insurance_par', 'insurance_por', 'income_tax_rate'],
+    'ffe-reserve': ['ffe_reserve_percentage', 'ffe_reserve_minimum', 'ffe_reserve_par']
   };
   
   // Get the list of fields for this tab
   const fields = tabFields[tabName] || [];
   
-  // Extract only the relevant fields from formData
-  return fields.reduce((result, field) => {
+  if (fields.length === 0) {
+    console.warn(`No field mapping found for tab '${tabName}'. Using all form data.`);
+    return { ...formData };
+  }
+  
+  // For property tab, always include property_key if it exists
+  if (tabName === 'property' && formData.property_key && !fields.includes('property_key')) {
+    fields.push('property_key');
+  }
+  
+  // Always include deal_id if it exists in the form data
+  if (formData.deal_id && !fields.includes('deal_id')) {
+    fields.push('deal_id');
+  }
+    // Extract only the relevant fields from formData
+  const result = fields.reduce((result, field) => {
     if (formData.hasOwnProperty(field)) {
-      result[field] = formData[field];
+      // Process specific fields that might need conversion
+      if (field.match(/^(acquisition|disposition)_(month|year)$/) && formData[field] !== null && formData[field] !== undefined) {
+        // Ensure months and years are integers
+        const parsedValue = parseInt(formData[field]);
+        if (!isNaN(parsedValue)) {
+          result[field] = parsedValue;
+        } else {
+          // Default to current year if parsing fails
+          result[field] = field.includes('year') ? new Date().getFullYear() : 1;
+          console.warn(`Invalid ${field} value "${formData[field]}", using default: ${result[field]}`);
+        }
+      } else if (field.match(/rate|percentage|ratio/) && formData[field] !== null && formData[field] !== undefined) {
+        // Ensure rates and percentages are floats
+        const parsedValue = parseFloat(formData[field]);
+        result[field] = !isNaN(parsedValue) ? parsedValue : 0;
+        if (isNaN(parsedValue)) {
+          console.warn(`Invalid ${field} value "${formData[field]}", using default: ${result[field]}`);
+        }      } else if (field.match(/amount|price|expense|cost/) && formData[field] !== null && formData[field] !== undefined) { 
+        // Ensure monetary values are numbers
+        const stringValue = String(formData[field]).replace(/,/g, ''); // Remove commas if present
+        const parsedValue = parseFloat(stringValue);
+        result[field] = !isNaN(parsedValue) ? parsedValue : 0;
+        if (isNaN(parsedValue)) {
+          console.warn(`Invalid ${field} value "${formData[field]}" - using default: ${result[field]}`);
+        }
+      } else {
+        result[field] = formData[field];
+      }
     }
     return result;
   }, {});
+  
+  console.log(`Extracted data for ${tabName} tab:`, result);
+  return result;
 };
 
 /**

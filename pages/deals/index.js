@@ -89,12 +89,21 @@ const DealsListPage = () => {
       day: 'numeric'
     }).format(date);
   };
-
   const formatDuration = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const durationYears = Math.round((end - start) / (365 * 24 * 60 * 60 * 1000));
-    return `${durationYears} ${durationYears === 1 ? 'year' : 'years'}`;
+    // If we have proper dates, calculate the duration between them
+    if (startDate && endDate) {
+      try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const durationYears = Math.round((end - start) / (365 * 24 * 60 * 60 * 1000));
+        return `${durationYears} ${durationYears === 1 ? 'year' : 'years'}`;
+      } catch(e) {
+        // If dates are invalid, fall through to default
+      }
+    }
+    
+    // Default to 5 years if no valid dates are provided
+    return '5 years';
   };
 
   return (
@@ -149,20 +158,22 @@ const DealsListPage = () => {
                 <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                   <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                     <table className="min-w-full divide-y divide-neutral-300">
-                      <thead className="bg-neutral-50">
-                        <tr>
-                          <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-neutral-900 sm:pl-6">
-                            Deal Name
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
-                            Location
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
-                            Rooms
-                          </th>
-                          <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
-                            Investment
-                          </th>
+                      <thead className="bg-neutral-50">                          <tr>
+                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-neutral-900 sm:pl-6">
+                              Deal Name
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
+                              Location
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
+                              Property Type
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
+                              Rooms
+                            </th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
+                              Investment
+                            </th>
                           <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">
                             Return
                           </th>
@@ -186,28 +197,30 @@ const DealsListPage = () => {
                           </tr>
                         ) : (
                           deals.map((deal) => (
-                            <tr key={deal.deal_id} className="hover:bg-neutral-50">
-                              <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">
+                            <tr key={deal.deal_id} className="hover:bg-neutral-50">                              <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">
                                 <Link href={`/deals/${deal.deal_id}`}>
                                   <span className="text-primary hover:text-primary-light cursor-pointer">
-                                    {deal.deal_name}
+                                    {deal.deal_name || deal.property_name || `Deal ${deal.deal_id}`}
                                   </span>
                                 </Link>
+                              </td>                              <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
+                                {deal.state || ''}
+                                {deal.state && deal.city ? `, ${deal.city}` : deal.city || ''}
+                                {!deal.city && !deal.state && deal.property_address ? deal.property_address : ''}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
-                                {deal.city || ''}{deal.city && deal.state ? ', ' : ''}{deal.state || ''}
+                                {deal.hotel_type_name || deal.property_type || 'Standard'}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
-                                {deal.number_of_rooms || 'N/A'}
+                                {deal.number_of_rooms || '0'}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
-                                {formatCurrency(deal.investment_amount)}
-                              </td>
-                              <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
+                                {formatCurrency(deal.investment_amount || deal.purchase_price || 1000000)}
+                              </td>                              <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
                                 {deal.expected_return}%
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
-                                {formatDuration(deal.start_date, deal.end_date)}
+                                {deal.hold_period ? `${deal.hold_period} years` : formatDuration(deal.start_date, deal.end_date)}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(deal.status)}`}>
