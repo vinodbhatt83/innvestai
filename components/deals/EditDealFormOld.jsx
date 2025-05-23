@@ -1,7 +1,6 @@
-// components/deals/EditDealFormNew.jsx
+// components/deals/EditDealForm.jsx
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { Save, CheckCircle2, AlertCircle } from 'lucide-react'; // Added icons
 import EnhancedPropertyDetailsForm from './EnhancedPropertyDetailsForm';
 import AcquisitionForm from './AcquisitionForm';
 import FinancingForm from './FinancingForm';
@@ -65,7 +64,7 @@ const validateTabData = (tabName, formData) => {
   };
 };
 
-const EditDealFormNew = ({ dealId, initialData = {} }) => {
+const EditDealForm = ({ dealId, initialData = {} }) => {
   const router = useRouter();
     // Set up form state using provided initial data
   const [formData, setFormData] = useState(initialData);
@@ -511,16 +510,20 @@ const EditDealFormNew = ({ dealId, initialData = {} }) => {
     
     const bgColor = message.type === 'success' ? 'bg-green-50' : 'bg-red-50';
     const textColor = message.type === 'success' ? 'text-green-800' : 'text-red-800';
-    const iconColor = message.type === 'success' ? 'text-green-400' : 'text-red-400'; // Corrected iconColor usage
+    const iconColor = message.type === 'success' ? 'text-green-400' : 'text-red-400';
     
     return (
       <div className={`mb-4 p-4 ${bgColor} border-l-4 ${message.type === 'success' ? 'border-green-400' : 'border-red-400'} rounded-md`}>
         <div className="flex">
           <div className="flex-shrink-0">
             {message.type === 'success' ? (
-              <CheckCircle2 className={`h-5 w-5 ${iconColor}`} />
+              <svg className={`h-5 w-5 ${iconColor}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
             ) : (
-              <AlertCircle className={`h-5 w-5 ${iconColor}`} />
+              <svg className={`h-5 w-5 ${iconColor}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
             )}
           </div>
           <div className="ml-3">
@@ -580,10 +583,9 @@ const EditDealFormNew = ({ dealId, initialData = {} }) => {
           </button>
           <button
             onClick={saveAllTabs}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
             disabled={isSaving}
           >
-            <Save className="mr-2 h-4 w-4" />
             {isSaving ? 'Saving...' : 'Save Deal'}
           </button>
         </div>
@@ -610,7 +612,7 @@ const EditDealFormNew = ({ dealId, initialData = {} }) => {
       {/* Add animation styles */}
       <style jsx global>{`
         @keyframes highlight {
-          0% { background-color: rgba(107, 70, 193, 0.1); } /* Using secondary color with alpha */
+          0% { background-color: rgba(79, 70, 229, 0.1); }
           100% { background-color: transparent; }
         }
         .highlight-container {
@@ -634,18 +636,16 @@ const EditDealFormNew = ({ dealId, initialData = {} }) => {
             </button>
             <button
               onClick={() => saveCurrentTab(activeTab)}
-              className="inline-flex items-center px-4 py-2 border border-secondary text-secondary rounded-md shadow-sm text-sm font-medium hover:bg-secondary hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               disabled={isSaving}
             >
-              <Save className="mr-2 h-4 w-4" />
               {isSaving ? 'Saving...' : 'Save Current Tab'}
             </button>
             <button
               onClick={saveAllTabs}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
               disabled={isSaving}
             >
-              <Save className="mr-2 h-4 w-4" />
               {isSaving ? 'Saving...' : 'Save & Exit'}
             </button>
           </div>
@@ -655,4 +655,4 @@ const EditDealFormNew = ({ dealId, initialData = {} }) => {
   );
 };
 
-export default EditDealFormNew;
+export default EditDealForm;

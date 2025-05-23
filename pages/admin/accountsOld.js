@@ -1,4 +1,4 @@
-// pages/admin/accountsNew.js
+// pages/admin/accounts.js
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -6,9 +6,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { withAuthRedirect } from '../../middleware/auth';
 import withAuthProtection from '../../utils/withAuthProtection';
 import Layout from '../../components/Layout';
-import { UserPlus, X, AlertCircle, Mail, UserX, UserCheck, PlusCircle, MinusCircle } from 'lucide-react'; // Added icons
 
-const ManageAccountsNew = () => {
+const ManageAccounts = () => {
     const { user, hasPermission } = useAuth();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -290,9 +289,8 @@ const ManageAccountsNew = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowAddUserForm(!showAddUserForm)}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
                             >
-                                {showAddUserForm ? <MinusCircle className="mr-2 h-5 w-5" /> : <UserPlus className="mr-2 h-5 w-5" />}
                                 {showAddUserForm ? 'Cancel' : 'Add User'}
                             </button>
                         </div>
@@ -302,7 +300,9 @@ const ManageAccountsNew = () => {
                         <div className="mb-4 bg-red-50 border border-red-200 text-red-800 rounded-md p-4">
                             <div className="flex">
                                 <div className="flex-shrink-0">
-                                    <AlertCircle className="h-5 w-5 text-red-400" />
+                                    <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
                                 </div>
                                 <div className="ml-3">
                                     <p className="text-sm font-medium">{error}</p>
@@ -453,17 +453,15 @@ const ManageAccountsNew = () => {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="w-full inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary sm:ml-3 sm:w-auto sm:text-sm"
+                                                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-secondary text-base font-medium text-white hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary sm:ml-3 sm:w-auto sm:text-sm"
                                             >
-                                                <UserPlus className="mr-2 h-4 w-4" />
                                                 {loading ? 'Processing...' : 'Add User'}
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setShowAddUserForm(false)}
-                                                className="mt-3 w-full inline-flex items-center justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary sm:mt-0 sm:w-auto sm:text-sm"
+                                                className="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary sm:mt-0 sm:w-auto sm:text-sm"
                                             >
-                                                <X className="mr-2 h-4 w-4" />
                                                 Cancel
                                             </button>
                                         </div>
@@ -502,7 +500,10 @@ const ManageAccountsNew = () => {
                                                     </div>
                                                     <div className="mt-2 flex">
                                                         <div className="flex items-center text-sm text-neutral-500">
-                                                            <Mail className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" />
+                                                            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                                            </svg>
                                                             <span className="truncate">{user.email}</span>
                                                         </div>
                                                     </div>
@@ -528,7 +529,6 @@ const ManageAccountsNew = () => {
                                                         } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary`}
                                                     disabled={loading || user.user_id === user.id} // Prevent deactivating yourself
                                                 >
-                                                    {user.is_active ? <UserX className="mr-1.5 h-4 w-4" /> : <UserCheck className="mr-1.5 h-4 w-4" />}
                                                     {user.is_active ? 'Deactivate' : 'Activate'}
                                                 </button>
                                             </div>
@@ -543,4 +543,4 @@ const ManageAccountsNew = () => {
     );
 };
 
-export default withAuthProtection(ManageAccountsNew, { adminOnly: true });
+export default withAuthProtection(ManageAccounts, { adminOnly: true });

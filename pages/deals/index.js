@@ -1,10 +1,11 @@
-// pages/deals/index.js
+// pages/deals/indexNew.js
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Layout from '../../components/Layout';
 import { dealApi } from '../../lib/api';
+import { Plus, Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'; // Import Lucide icons
 
-const DealsListPage = () => {
+const DealsListPageNew = () => {
   const [deals, setDeals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -99,7 +100,7 @@ const DealsListPage = () => {
 
   return (
     <Layout title="Deals">
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-6"> {/* Added py-6 for consistency */}
         <div className="sm:flex sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">
@@ -111,30 +112,23 @@ const DealsListPage = () => {
           </div>
           <div className="mt-4 sm:mt-0 sm:ml-16 flex">
             <Link href="/deals/create">
-              <span className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary cursor-pointer">
+              <span className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary cursor-pointer">
                 Create Deal
-                <svg className="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
+                <Plus className="ml-2 -mr-1 h-5 w-5" />
               </span>
             </Link>
           </div>
         </div>
 
         {isLoading && deals.length === 0 ? (
-          <div className="flex justify-center mt-8">
-            <svg className="animate-spin h-10 w-10 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+          <div className="flex justify-center items-center mt-12"> {/* Increased margin and centered */}
+            <Loader2 className="animate-spin h-12 w-12 text-secondary" /> {/* Made spinner larger */}
           </div>
         ) : error ? (
           <div className="rounded-md bg-red-50 p-4 mt-8">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
+                <AlertCircle className="h-5 w-5 text-red-400" />
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">{error}</h3>
@@ -149,7 +143,7 @@ const DealsListPage = () => {
                 <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                   <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                     <table className="min-w-full divide-y divide-neutral-300">
-                      <thead className="bg-neutral-50">
+                      <thead className="bg-neutral-100"> {/* Slightly darker header for more contrast */}
                         <tr>
                           <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-neutral-900 sm:pl-6">
                             Deal Name
@@ -189,7 +183,7 @@ const DealsListPage = () => {
                             <tr key={deal.deal_id} className="hover:bg-neutral-50">
                               <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">
                                 <Link href={`/deals/${deal.deal_id}`}>
-                                  <span className="text-primary hover:text-primary-light cursor-pointer">
+                                  <span className="text-primary hover:text-secondary cursor-pointer"> {/* Changed hover to secondary for more pop */}
                                     {deal.deal_name}
                                   </span>
                                 </Link>
@@ -216,12 +210,12 @@ const DealsListPage = () => {
                               </td>
                               <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                 <Link href={`/deals/${deal.deal_id}/edit`}>
-                                  <span className="text-primary hover:text-primary-light cursor-pointer mr-4">
+                                  <span className="text-secondary hover:text-secondary-light cursor-pointer mr-4"> {/* Changed to secondary for Edit action */}
                                     Edit
                                   </span>
                                 </Link>
                                 <Link href={`/deals/${deal.deal_id}`}>
-                                  <span className="text-primary hover:text-primary-light cursor-pointer">
+                                  <span className="text-neutral-600 hover:text-secondary cursor-pointer"> {/* View is less primary than Edit */}
                                     View
                                   </span>
                                 </Link>
@@ -273,26 +267,22 @@ const DealsListPage = () => {
                     <button
                       onClick={handlePrevPage}
                       disabled={pagination.offset === 0}
-                      className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 ${
-                        pagination.offset === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-50'
+                      className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-neutral-500 ring-1 ring-inset ring-neutral-300 ${ /* Adjusted text color for icons */
+                        pagination.offset === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-100' /* Slightly more visible hover */
                       }`}
                     >
                       <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                      </svg>
+                      <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button
                       onClick={handleNextPage}
                       disabled={pagination.offset + pagination.limit >= pagination.total}
-                      className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-neutral-400 ring-1 ring-inset ring-neutral-300 ${
-                        pagination.offset + pagination.limit >= pagination.total ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-50'
+                      className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-neutral-500 ring-1 ring-inset ring-neutral-300 ${ /* Adjusted text color for icons */
+                        pagination.offset + pagination.limit >= pagination.total ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-100' /* Slightly more visible hover */
                       }`}
                     >
                       <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                      </svg>
+                      <ChevronRight className="h-5 w-5" />
                     </button>
                   </nav>
                 </div>
@@ -305,4 +295,4 @@ const DealsListPage = () => {
   );
 };
 
-export default DealsListPage;
+export default DealsListPageNew;

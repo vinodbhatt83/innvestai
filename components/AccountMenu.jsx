@@ -1,6 +1,7 @@
 // components/AccountMenu.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react'; // Added ChevronDown icon
 import { useAuth } from '../contexts/AuthContext';
 
 const AccountMenu = () => {
@@ -26,10 +27,10 @@ const AccountMenu = () => {
     return (
       <div className="flex items-center space-x-4">
         <Link href="/login">
-          <span className="text-sm font-medium text-neutral-600 hover:text-neutral-900 cursor-pointer">Sign in</span>
+          <span className="text-sm font-medium text-gray-700 hover:text-secondary cursor-pointer">Sign in</span>
         </Link>
         <Link href="/register">
-          <span className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light cursor-pointer">
+          <span className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary cursor-pointer">
             Sign up
           </span>
         </Link>
@@ -56,19 +57,10 @@ const AccountMenu = () => {
             {user.firstName?.charAt(0) || ''}
             {user.lastName?.charAt(0) || ''}
           </div>
-          <svg
-            className={`ml-1 h-5 w-5 text-neutral-400 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
+          <ChevronDown 
+            className={`ml-1 h-5 w-5 text-gray-400 hover:text-gray-500 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`}
             aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
+          />
         </button>
       </div>
 

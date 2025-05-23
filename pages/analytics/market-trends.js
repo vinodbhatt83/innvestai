@@ -1,10 +1,11 @@
-// pages/analytics/market-trends.js
+// pages/analytics/market-trendsNew.js
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import { analyticsApi } from '../../lib/api';
 import MarketTrendsChart from '../../components/analytics/MarketTrendsChart';
+import { Loader2, AlertCircle, DownloadCloud, DollarSign, Columns } from 'lucide-react'; // Added icons
 
-const MarketTrendsPage = () => {
+const MarketTrendsPageNew = () => {
   const [markets, setMarkets] = useState([
     'New York', 'Miami', 'Chicago', 'Los Angeles', 'Boston',
     'San Francisco', 'Washington DC', 'Las Vegas', 'Orlando', 'Austin'
@@ -52,7 +53,7 @@ const MarketTrendsPage = () => {
 
   return (
     <Layout title="Market Trends Analysis">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"> {/* Added py-6 for consistency */}
         <div className="md:flex md:items-center md:justify-between mb-8">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">
@@ -139,18 +140,13 @@ const MarketTrendsPage = () => {
               <div className="px-6 py-5">
                 {isLoading ? (
                   <div className="flex justify-center items-center h-80">
-                    <svg className="animate-spin h-10 w-10 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loader2 className="animate-spin h-10 w-10 text-secondary" />
                   </div>
                 ) : error ? (
                   <div className="bg-red-50 p-4 rounded-md">
                     <div className="flex">
                       <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
+                        <AlertCircle className="h-5 w-5 text-red-400" />
                       </div>
                       <div className="ml-3">
                         <h3 className="text-sm font-medium text-red-800">{error}</h3>
@@ -175,10 +171,7 @@ const MarketTrendsPage = () => {
               <div className="px-6 py-5">
                 {isLoading ? (
                   <div className="flex justify-center items-center h-32">
-                    <svg className="animate-spin h-8 w-8 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loader2 className="animate-spin h-8 w-8 text-secondary" />
                   </div>
                 ) : error ? (
                   <div className="bg-red-50 p-4 rounded-md">
@@ -258,10 +251,7 @@ const MarketTrendsPage = () => {
               <div className="px-6 py-5">
                 {isLoading ? (
                   <div className="flex justify-center items-center h-32">
-                    <svg className="animate-spin h-8 w-8 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loader2 className="animate-spin h-8 w-8 text-secondary" />
                   </div>
                 ) : error ? (
                   <p className="text-sm text-neutral-500">Unable to load market overview.</p>
@@ -404,14 +394,14 @@ const MarketTrendsPage = () => {
               </div>
               <div className="px-6 py-5">
                 <div className="flex flex-col space-y-3">
-                  <button className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
-                    Generate Market Report
+                  <button className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
+                    <DownloadCloud className="mr-2 h-5 w-5" /> Generate Market Report
                   </button>
-                  <button className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                    View Investment Opportunities
+                  <button className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
+                    <DollarSign className="mr-2 h-5 w-5" /> View Investment Opportunities
                   </button>
                   <button className="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-300 rounded-md shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
-                    Compare with Other Markets
+                    <Columns className="mr-2 h-5 w-5" /> Compare with Other Markets
                   </button>
                 </div>
               </div>
@@ -423,4 +413,4 @@ const MarketTrendsPage = () => {
   );
 };
 
-export default MarketTrendsPage;
+export default MarketTrendsPageNew;

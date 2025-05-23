@@ -9,7 +9,7 @@ const LoadingSpinner = ({ size = 'normal', className = '' }) => {
 
   return (
     <svg 
-      className={`animate-spin text-primary ${sizeClass} ${className}`} 
+      className={`animate-spin text-secondary ${sizeClass} ${className}`} 
       xmlns="http://www.w3.org/2000/svg" 
       fill="none" 
       viewBox="0 0 24 24"

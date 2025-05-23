@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { CheckCircle2, AlertCircle, Info } from 'lucide-react'; // Added icons
 import EnhancedPropertyDetailsForm from './EnhancedPropertyDetailsForm';
 import AcquisitionForm from './AcquisitionForm';
 import FinancingForm from './FinancingForm';
@@ -513,7 +514,7 @@ function DealCreationForm() {
                 <button
                     onClick={handleNext}
                     disabled={isSubmitting}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-secondary to-secondary-light hover:from-secondary-light hover:to-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
                 >
                     {isSubmitting ? 'Processing...' : activeStep === 'ffe-reserve' ? 'Submit' : 'Next'}
                 </button>
@@ -532,13 +533,9 @@ function DealCreationForm() {
                 <div className="flex items-center">
                     <div className="flex-shrink-0 mr-3">
                         {isSuccess ? (
-                            <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
                         ) : (
-                            <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            <AlertCircle className="h-5 w-5 text-red-500" />
                         )}
                     </div>
                     <div className="text-sm font-medium">
@@ -647,9 +644,7 @@ function DealCreationForm() {
                             <div className="mb-4 p-4 bg-blue-50 rounded-md border border-blue-200 text-blue-700">
                                 <div className="flex items-start">
                                     <div className="flex-shrink-0 mt-0.5">
-                                        <svg className="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
+                                        <Info className="h-5 w-5 text-blue-600" />
                                     </div>
                                     <div className="ml-3">
                                         <p className="text-sm font-medium">
@@ -666,9 +661,7 @@ function DealCreationForm() {
                         />
                         
                         <div className="mt-2 flex items-center justify-end text-xs text-secondary">
-                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
+                            <Info className="w-4 h-4 mr-1 text-secondary" /> {/* Applied text-secondary for purple color */}
                             <span>Metrics update dynamically as you make changes</span>
                         </div>
                     </div>
